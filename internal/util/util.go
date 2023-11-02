@@ -641,7 +641,8 @@ func FetchRemote(
 	// Read response body
 	var responseBodyBytes []byte
 	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("remote mixer response not ok: %s", response.Status)
+		fmt.Printf("REMOTE MIXER RESPONSE NOT OK: %s, %s, %s, %v\n", response.Status, url, jsonValue, request.Header)
+		return fmt.Errorf("remote mixer response not ok: %s, %s, %s, %v\n", response.Status, url, jsonValue, request.Header)
 	}
 	responseBodyBytes, err = io.ReadAll(response.Body)
 	if err != nil {

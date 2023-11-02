@@ -296,7 +296,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to listen on network: %v", err)
 	}
-	log.Println("Mixer ready to serve!!")
+	log.Println("FOO BAR! Mixer ready to serve!!")
 	if err := srv.Serve(lis); err != nil {
 		log.Fatalf("Failed to serve: %v", err)
 	}
