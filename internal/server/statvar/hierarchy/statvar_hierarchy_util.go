@@ -26,6 +26,7 @@ import (
 	"github.com/datacommonsorg/mixer/internal/server/resource"
 
 	pb "github.com/datacommonsorg/mixer/internal/proto"
+	pbv1 "github.com/datacommonsorg/mixer/internal/proto/v1"
 	"github.com/datacommonsorg/mixer/internal/util"
 )
 
@@ -35,7 +36,26 @@ const (
 	SvgRoot         = "dc/g/Root"
 	CustomSvgRoot   = "dc/g/Custom_Root"
 	CustomSVGPrefix = "dc/g/Custom_"
+	FoldedSvgRoot   = "dc/g/Folded_Root"
 )
+
+// Returns true if the request includes the folded svg root "dc/g/Folded_Root".
+// Further, if it does, it replaces the folded root with the svg root "dc/g/Root".
+func HasFoldedRoot(request *pbv1.BulkVariableGroupInfoRequest) bool {
+	if request == nil {
+		return false
+	}
+
+	queryFoldedRoot := false
+	for i := range request.Nodes {
+		if request.Nodes[i] == FoldedSvgRoot {
+			queryFoldedRoot = true
+			request.Nodes[i] = SvgRoot
+			break
+		}
+	}
+	return queryFoldedRoot
+}
 
 // Note this function modifies validSVG inside.
 func markValidSVG(

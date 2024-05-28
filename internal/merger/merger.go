@@ -23,9 +23,11 @@ import (
 	"sort"
 
 	"github.com/datacommonsorg/mixer/internal/proto"
+	pb "github.com/datacommonsorg/mixer/internal/proto"
 	pbv1 "github.com/datacommonsorg/mixer/internal/proto/v1"
 	pbv2 "github.com/datacommonsorg/mixer/internal/proto/v2"
 	"github.com/datacommonsorg/mixer/internal/server/pagination"
+	"github.com/datacommonsorg/mixer/internal/server/statvar/hierarchy"
 	"github.com/datacommonsorg/mixer/internal/util"
 )
 
@@ -338,6 +340,98 @@ func MergeBulkVariableInfoResponse(primary, secondary *pbv1.BulkVariableInfoResp
 	})
 
 	return merged
+}
+
+type MergeBulkVariableGroupInfoResponseOpts struct {
+	FoldSecondaryRootSvg bool
+	FoldedRootRequested  bool
+	BlocklistSvgs        map[string]struct{}
+}
+
+// MergeBulkVariableGroupInfoResponse merges two BulkVariableGroupInfoResponses.
+func MergeBulkVariableGroupInfoResponse(primary *pbv1.BulkVariableGroupInfoResponse, secondary *pbv1.BulkVariableGroupInfoResponse, opts MergeBulkVariableGroupInfoResponseOpts) *pbv1.BulkVariableGroupInfoResponse {
+	keyedInfo := map[string]*pbv1.VariableGroupInfoResponse{}
+
+	if primary != nil {
+		for _, item := range primary.Data {
+			keyedInfo[item.GetNode()] = item
+		}
+	}
+	if secondary != nil {
+		for _, remoteItem := range secondary.Data {
+			n := remoteItem.GetNode()
+			if opts.FoldSecondaryRootSvg && n == hierarchy.SvgRoot {
+				if opts.FoldedRootRequested {
+					n = hierarchy.FoldedSvgRoot
+				} else {
+					// When query the root, make a folded node that folds all the
+					// top level svg in it.
+					//
+					// For example, dc/g/Root has two children svg: dc/g/Root_1,
+					// dc/g/Root_2. Here adds dc/g/Folded_Root as an intermediate node,
+					// then we have:
+					// dc/g/Root -> dc/g/Folded_root -> [dc/g/Root_1, dc/g/Root_2]
+					foldedSvg := &pb.StatVarGroupNode_ChildSVG{
+						Id:                     hierarchy.FoldedSvgRoot,
+						DescendentStatVarCount: remoteItem.Info.DescendentStatVarCount,
+						SpecializedEntity:      "Google",
+					}
+					// Decrease the count from block list svg.
+					for _, child := range remoteItem.Info.ChildStatVarGroups {
+						if _, ok := opts.BlocklistSvgs[child.Id]; ok {
+							foldedSvg.DescendentStatVarCount -= child.DescendentStatVarCount
+						}
+					}
+					if foldedSvg.DescendentStatVarCount < 0 {
+						foldedSvg.DescendentStatVarCount = 0
+					}
+					remoteItem.Info.ChildStatVarGroups = []*pb.StatVarGroupNode_ChildSVG{foldedSvg}
+				}
+			}
+			if _, ok := keyedInfo[n]; ok {
+				keyedInfo[n].Info.ChildStatVarGroups = append(
+					keyedInfo[n].Info.ChildStatVarGroups,
+					remoteItem.Info.ChildStatVarGroups...,
+				)
+				if opts.FoldSecondaryRootSvg && n == hierarchy.SvgRoot {
+					for _, item := range keyedInfo[n].Info.ChildStatVarGroups {
+						item.SpecializedEntity = "Imported by " + item.SpecializedEntity
+					}
+				}
+				keyedInfo[n].Info.ChildStatVars = append(
+					keyedInfo[n].Info.ChildStatVars,
+					remoteItem.Info.ChildStatVars...,
+				)
+				keyedInfo[n].Info.DescendentStatVarCount += remoteItem.Info.DescendentStatVarCount
+			} else {
+				keyedInfo[n] = remoteItem
+			}
+			// Remove all the block list svg from child svg.
+			childSvg := []*pb.StatVarGroupNode_ChildSVG{}
+			for _, child := range keyedInfo[n].Info.ChildStatVarGroups {
+				_, ok := opts.BlocklistSvgs[child.Id]
+				if ok {
+					keyedInfo[n].Info.DescendentStatVarCount -= child.DescendentStatVarCount
+				} else {
+					childSvg = append(childSvg, child)
+				}
+			}
+			if keyedInfo[n].Info.DescendentStatVarCount < 0 {
+				keyedInfo[n].Info.DescendentStatVarCount = 0
+			}
+			keyedInfo[n].Info.ChildStatVarGroups = childSvg
+		}
+	}
+	result := &pbv1.BulkVariableGroupInfoResponse{
+		Data: []*pbv1.VariableGroupInfoResponse{},
+	}
+	for _, node := range keyedInfo {
+		result.Data = append(result.Data, node)
+	}
+	sort.SliceStable(result.Data, func(i, j int) bool {
+		return result.Data[i].Node < result.Data[j].Node
+	})
+	return result
 }
 
 func toStatVarSummaryMap(in []*pbv1.VariableInfoResponse) map[string]*proto.StatVarSummary {

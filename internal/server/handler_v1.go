@@ -38,6 +38,7 @@ import (
 	"github.com/datacommonsorg/mixer/internal/server/v1/variables"
 	"github.com/datacommonsorg/mixer/internal/util"
 	"golang.org/x/sync/errgroup"
+	"google.golang.org/protobuf/proto"
 )
 
 const foldedSvgRoot = "dc/g/Folded_Root"
@@ -236,107 +237,48 @@ func (s *Server) VariableGroupInfo(
 func (s *Server) BulkVariableGroupInfo(
 	ctx context.Context, in *pbv1.BulkVariableGroupInfoRequest,
 ) (*pbv1.BulkVariableGroupInfoResponse, error) {
-	localResp, err := info.BulkVariableGroupInfo(ctx, in, s.store, s.cachedata.Load())
-	if err != nil {
+	errGroup, errCtx := errgroup.WithContext(ctx)
+
+	remoteIn := proto.Clone(in).(*pbv1.BulkVariableGroupInfoRequest)
+	foldedRootRequested := hierarchy.HasFoldedRoot(remoteIn)
+
+	localResponseChan := make(chan *pbv1.BulkVariableGroupInfoResponse, 1)
+	remoteResponseChan := make(chan *pbv1.BulkVariableGroupInfoResponse, 1)
+
+	errGroup.Go(func() error {
+		localResponse, err := localBulkVariableGroupInfoFunc(errCtx, in, s.store, s.cachedata.Load())
+		if err != nil {
+			return err
+		}
+		localResponseChan <- localResponse
+		return nil
+	})
+
+	if s.metadata.RemoteMixerDomain != "" {
+		errGroup.Go(func() error {
+			remoteResponse, err := remoteBulkVariableGroupInfoFunc(s, remoteIn)
+			if err != nil {
+				return err
+			}
+			remoteResponseChan <- remoteResponse
+			return nil
+		})
+	} else {
+		remoteResponseChan <- nil
+	}
+
+	if err := errGroup.Wait(); err != nil {
 		return nil, err
 	}
-	keyedInfo := map[string]*pbv1.VariableGroupInfoResponse{}
-	for _, item := range localResp.Data {
-		keyedInfo[item.GetNode()] = item
-	}
-	if s.metadata.RemoteMixerDomain != "" {
-		queryFoldedRoot := false
-		for i := range in.Nodes {
-			if in.Nodes[i] == foldedSvgRoot {
-				queryFoldedRoot = true
-				in.Nodes[i] = hierarchy.SvgRoot
-				break
-			}
-		}
-		remoteResp := &pbv1.BulkVariableGroupInfoResponse{}
-		if err := util.FetchRemote(
-			s.metadata,
-			s.httpClient,
-			"/v1/bulk/info/variable-group",
-			in,
-			remoteResp,
-		); err != nil {
-			return nil, err
-		}
+	close(localResponseChan)
+	close(remoteResponseChan)
 
-		for _, remoteItem := range remoteResp.Data {
-			n := remoteItem.GetNode()
-			if s.metadata.FoldRemoteRootSvg && n == hierarchy.SvgRoot {
-				if queryFoldedRoot {
-					n = foldedSvgRoot
-				} else {
-					// When query the root, make a folded node that folds all the
-					// top level svg in it.
-					//
-					// For example, dc/g/Root has two children svg: dc/g/Root_1,
-					// dc/g/Root_2. Here adds dc/g/Folded_Root as an intermediate node,
-					// then we have:
-					// dc/g/Root -> dc/g/Folded_root -> [dc/g/Root_1, dc/g/Root_2]
-					foldedSvg := &pb.StatVarGroupNode_ChildSVG{
-						Id:                     foldedSvgRoot,
-						DescendentStatVarCount: remoteItem.Info.DescendentStatVarCount,
-						SpecializedEntity:      "Google",
-					}
-					// Decrease the count from block list svg.
-					for _, child := range remoteItem.Info.ChildStatVarGroups {
-						if _, ok := s.cachedata.Load().BlocklistSvgs()[child.Id]; ok {
-							foldedSvg.DescendentStatVarCount -= child.DescendentStatVarCount
-						}
-					}
-					if foldedSvg.DescendentStatVarCount < 0 {
-						foldedSvg.DescendentStatVarCount = 0
-					}
-					remoteItem.Info.ChildStatVarGroups = []*pb.StatVarGroupNode_ChildSVG{foldedSvg}
-				}
-			}
-			if _, ok := keyedInfo[n]; ok {
-				keyedInfo[n].Info.ChildStatVarGroups = append(
-					keyedInfo[n].Info.ChildStatVarGroups,
-					remoteItem.Info.ChildStatVarGroups...,
-				)
-				if s.metadata.FoldRemoteRootSvg && n == hierarchy.SvgRoot {
-					for _, item := range keyedInfo[n].Info.ChildStatVarGroups {
-						item.SpecializedEntity = "Imported by " + item.SpecializedEntity
-					}
-				}
-				keyedInfo[n].Info.ChildStatVars = append(
-					keyedInfo[n].Info.ChildStatVars,
-					remoteItem.Info.ChildStatVars...,
-				)
-				keyedInfo[n].Info.DescendentStatVarCount += remoteItem.Info.DescendentStatVarCount
-			} else {
-				keyedInfo[n] = remoteItem
-			}
-			// Remove all the block list svg from child svg.
-			childSvg := []*pb.StatVarGroupNode_ChildSVG{}
-			for _, child := range keyedInfo[n].Info.ChildStatVarGroups {
-				_, ok := s.cachedata.Load().BlocklistSvgs()[child.Id]
-				if ok {
-					keyedInfo[n].Info.DescendentStatVarCount -= child.DescendentStatVarCount
-				} else {
-					childSvg = append(childSvg, child)
-				}
-			}
-			if keyedInfo[n].Info.DescendentStatVarCount < 0 {
-				keyedInfo[n].Info.DescendentStatVarCount = 0
-			}
-			keyedInfo[n].Info.ChildStatVarGroups = childSvg
-		}
+	mergeOpts := merger.MergeBulkVariableGroupInfoResponseOpts{
+		FoldSecondaryRootSvg: s.metadata.FoldRemoteRootSvg,
+		FoldedRootRequested:  foldedRootRequested,
+		BlocklistSvgs:        s.cachedata.Load().BlocklistSvgs(),
 	}
-	result := &pbv1.BulkVariableGroupInfoResponse{
-		Data: []*pbv1.VariableGroupInfoResponse{},
-	}
-	for _, node := range keyedInfo {
-		result.Data = append(result.Data, node)
-	}
-	sort.SliceStable(result.Data, func(i, j int) bool {
-		return result.Data[i].Node < result.Data[j].Node
-	})
+	result := merger.MergeBulkVariableGroupInfoResponse(<-localResponseChan, <-remoteResponseChan, mergeOpts)
 	return result, nil
 }
 
