@@ -213,7 +213,7 @@ func main() {
 	}
 
 	if *useCloudSQL {
-		if sqlClient.DB != nil {
+		if sqldb.IsConnected(&sqlClient) {
 			log.Printf("SQL client has already been created, will not use CloudSQL")
 		} else {
 			client, err := sqldb.NewCloudSQLClient(*cloudSQLInstance)
@@ -234,7 +234,7 @@ func main() {
 	}
 
 	// Store
-	if len(tables) == 0 && *remoteMixerDomain == "" && sqlClient.DB == nil {
+	if len(tables) == 0 && *remoteMixerDomain == "" && !sqldb.IsConnected(&sqlClient) {
 		log.Fatal("No bigtables or remote mixer domain or sql database are provided")
 	}
 	store, err := store.NewStore(
@@ -248,7 +248,7 @@ func main() {
 	cacheOptions := cache.CacheOptions{
 		FetchSVG:       *cacheSVG,
 		SearchSVG:      *cacheSVG,
-		CacheSQL:       store.SQLClient.DB != nil,
+		CacheSQL:       sqldb.IsConnected(&store.SQLClient),
 		CacheSVFormula: *cacheSVFormula,
 	}
 	c, err := cache.NewCache(ctx, store, cacheOptions, metadata)
