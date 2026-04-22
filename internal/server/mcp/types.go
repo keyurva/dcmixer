@@ -14,3 +14,13 @@
 
 // Package mcp defines the input and output types for MCP tools.
 package mcp
+
+// EchoInput defines the arguments for the echo tool.
+type EchoInput struct {
+	Message string `json:"message" jsonschema:"The message to echo"`
+}
+
+// EchoOutput defines the response for the echo tool.
+type EchoOutput struct {
+	Response string `json:"response" jsonschema:"The echoed response"`
+}

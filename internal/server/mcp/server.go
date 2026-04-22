@@ -37,6 +37,18 @@ func NewDcMcpServer() *DcMcpServer {
 		server.WithToolCapabilities(true),
 	)
 
+	// Instantiate tools
+	tools := NewMcpTools()
+
+	// Define tool
+	echoTool := mcp.NewTool("echo",
+		mcp.WithDescription("Echoes back the input message"),
+		mcp.WithString("message", mcp.Required(), mcp.Description("The message to echo")),
+	)
+
+	// Register tool with handler
+	s.AddTool(echoTool, MakeHandler(tools.Echo))
+
 	return &DcMcpServer{sdkServer: s}
 }
 

@@ -14,3 +14,25 @@
 
 // Package mcp defines the tools exposed by the MCP server.
 package mcp
+
+import (
+	"fmt"
+)
+
+// McpTools holds dependencies for the MCP tools.
+type McpTools struct {
+	// We don't have any dependencies for the skeletal infra, but we will when we add real tools.
+}
+
+// NewMcpTools initializes McpTools.
+func NewMcpTools() *McpTools {
+	return &McpTools{}
+}
+
+// Echo is the business logic for the echo tool.
+// This is a temp tool to verify MCP infra and will be removed when we add real tools.
+func (m *McpTools) Echo(input EchoInput) (EchoOutput, error) {
+	return EchoOutput{
+		Response: fmt.Sprintf("Echo: %s", input.Message),
+	}, nil
+}
