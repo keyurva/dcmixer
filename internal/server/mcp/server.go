@@ -17,8 +17,10 @@ package mcp
 
 import (
 	"context"
+	"embed"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 
 	"github.com/mark3labs/mcp-go/mcp"
@@ -42,19 +44,15 @@ func NewDcMcpServer() *DcMcpServer {
 	// Instantiate tools
 	tools := NewMcpTools()
 
-	// Define tool
-	echoTool := mcp.NewTool("echo",
-		mcp.WithDescription("Echoes back the input message"),
-		mcp.WithString("message", mcp.Required(), mcp.Description("The message to echo")),
-	)
-
-	// Register tool with handler
-	s.AddTool(echoTool, MakeHandler(tools.Echo))
-
 	// Create streamable HTTP server
 	httpSrv := server.NewStreamableHTTPServer(s)
 
-	return &DcMcpServer{sdkServer: s, httpServer: httpSrv}
+	dcMcpSrv := &DcMcpServer{sdkServer: s, httpServer: httpSrv}
+
+	// Register the echo tool using the package-level helper
+	registerTool(dcMcpSrv, "echo", tools.Echo)
+
+	return dcMcpSrv
 }
 
 // ServeHTTP satisfies the http.Handler interface.
@@ -81,13 +79,49 @@ func MakeHandler[T_IN any, T_OUT any](bizLogic func(T_IN) (T_OUT, error)) func(c
 			return mcp.NewToolResultError(fmt.Sprintf("Failed to unmarshal arguments: %v", err)), nil
 		}
 
+		// Log tool invocation
+		slog.Info("Invoking MCP tool", "name", req.Params.Name, "arguments", args)
+
 		// Call the business logic
 		output, err := bizLogic(input)
 		if err != nil {
+			slog.Error("MCP tool execution failed", "name", req.Params.Name, "error", err)
 			return mcp.NewToolResultError(err.Error()), nil
 		}
+
+		slog.Info("MCP tool execution completed", "name", req.Params.Name)
 
 		// Return the output struct directly using the SDK's JSON helper
 		return mcp.NewToolResultJSON(output)
 	}
+}
+
+// TODO(keyurs): Support loading instructions from a custom path (e.g., GCS).
+//
+//go:embed instructions/*
+var instructionsFS embed.FS
+
+func loadDescription(toolName string) string {
+	path := fmt.Sprintf("instructions/%s.md", toolName)
+	content, err := instructionsFS.ReadFile(path)
+	if err != nil {
+		slog.Warn("Failed to load tool description from embedded files", "tool", toolName, "error", err)
+		return "Fallback description for " + toolName
+	}
+	return string(content)
+}
+
+// registerTool is a generic helper to register a tool with its input schema and handler.
+func registerTool[T_IN any, T_OUT any](s *DcMcpServer, name string, bizLogic func(T_IN) (T_OUT, error)) {
+	// Load description from file
+	description := loadDescription(name)
+
+	// Define tool using struct schema
+	tool := mcp.NewTool(name,
+		mcp.WithDescription(description),
+		mcp.WithInputSchema[T_IN](),
+	)
+
+	// Register tool with handler created by the factory
+	s.sdkServer.AddTool(tool, MakeHandler(bizLogic))
 }
