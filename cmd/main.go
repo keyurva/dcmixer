@@ -38,6 +38,7 @@ import (
 	"github.com/datacommonsorg/mixer/internal/server/datasources"
 	"github.com/datacommonsorg/mixer/internal/server/dispatcher"
 	"github.com/datacommonsorg/mixer/internal/server/healthcheck"
+	"github.com/datacommonsorg/mixer/internal/server/mcp"
 	"github.com/datacommonsorg/mixer/internal/server/redis"
 	"github.com/datacommonsorg/mixer/internal/server/remote"
 	"github.com/datacommonsorg/mixer/internal/server/spanner"
@@ -59,6 +60,9 @@ import (
 var (
 	// Server config
 	port           = flag.Int("port", 12345, "Port on which to run the server.")
+	// http_port is used for serving HTTP endpoints (like MCP). It can be used
+	// for other HTTP handlers in the future.
+	httpPort       = flag.Int("http_port", 12346, "Port on which to run the HTTP server.")
 	hostProject    = flag.String("host_project", "", "The GCP project to run the mixer instance.")
 	writeUsageLogs = flag.Bool("write_usage_logs", false, "Whether to write usage logs.")
 	// BigQuery (Sparql)
@@ -484,6 +488,31 @@ func main() {
 			slog.Error("Error serving HTTP profile", "error", http.ListenAndServe(httpProfileFrom, nil))
 		}()
 	}
+	// Start HTTP server (currently for MCP) in a separate goroutine.
+	go func() {
+		slog.Info("Starting HTTP server", "port", *httpPort)
+		mcpServer := mcp.NewDcMcpServer()
+
+		mux := http.NewServeMux()
+		// Helper closure to map both trailing slash and no-trailing slash paths.
+		// Register both trailing slash and no-trailing slash to avoid redirects
+		// which some MCP clients do not support.
+		registerPath := func(prefix string) {
+			mux.Handle("/"+prefix+"/", http.StripPrefix("/"+prefix, mcpServer))
+			mux.Handle("/"+prefix, http.StripPrefix("/"+prefix, mcpServer))
+		}
+
+		// Map both /mcp and /mixer-mcp. /mixer-mcp is a temporary path to allow testing the new
+		// mixer mcp server implementation side-by-side with the existing Python server (which handles /mcp).
+		// Once validated, /mcp will be routed to mixer and /mixer-mcp can be removed.
+		registerPath("mcp")
+		registerPath("mixer-mcp")
+
+		if err := http.ListenAndServe(fmt.Sprintf(":%d", *httpPort), mux); err != nil {
+			slog.Error("Failed to start HTTP server", "error", err)
+		}
+	}()
+
 	slog.Info("About to listen")
 	// Listen on network
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))

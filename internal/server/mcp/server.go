@@ -19,6 +19,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -26,7 +27,8 @@ import (
 
 // DcMcpServer wraps the SDK's MCP server.
 type DcMcpServer struct {
-	sdkServer *server.MCPServer
+	sdkServer  *server.MCPServer
+	httpServer *server.StreamableHTTPServer
 }
 
 // NewDcMcpServer initializes the server with basic capabilities.
@@ -49,7 +51,15 @@ func NewDcMcpServer() *DcMcpServer {
 	// Register tool with handler
 	s.AddTool(echoTool, MakeHandler(tools.Echo))
 
-	return &DcMcpServer{sdkServer: s}
+	// Create streamable HTTP server
+	httpSrv := server.NewStreamableHTTPServer(s)
+
+	return &DcMcpServer{sdkServer: s, httpServer: httpSrv}
+}
+
+// ServeHTTP satisfies the http.Handler interface.
+func (s *DcMcpServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.httpServer.ServeHTTP(w, r)
 }
 
 // MakeHandler is a generic factory that converts a business logic function
