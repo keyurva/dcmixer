@@ -38,12 +38,12 @@ static_resources:
                             prefix: "/mixer-mcp"
                           route:
                             cluster: mcp_http_server
-                            timeout: 0s
+                            timeout: 60s
                         - match:
                             prefix: "/mcp"
                           route:
                             cluster: mcp_http_server
-                            timeout: 0s
+                            timeout: 60s
                         - match:
                             prefix: "/"
                           route:

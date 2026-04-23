@@ -26,6 +26,7 @@ import (
 	"os"
 	"runtime"
 	"runtime/pprof"
+	"time"
 
 	"github.com/datacommonsorg/mixer/internal/featureflags"
 	logger "github.com/datacommonsorg/mixer/internal/log"
@@ -63,6 +64,7 @@ var (
 	// http_port is used for serving HTTP endpoints (like MCP). It can be used
 	// for other HTTP handlers in the future.
 	httpPort       = flag.Int("http_port", 12346, "Port on which to run the HTTP server.")
+	mcpKeepaliveInterval = flag.Duration("mcp_keepalive_interval", 30*time.Second, "Duration between MCP keepalive pings.")
 	hostProject    = flag.String("host_project", "", "The GCP project to run the mixer instance.")
 	writeUsageLogs = flag.Bool("write_usage_logs", false, "Whether to write usage logs.")
 	// BigQuery (Sparql)
@@ -492,6 +494,9 @@ func main() {
 	go func() {
 		slog.Info("Starting HTTP server", "port", *httpPort)
 		mcpServer := mcp.NewDcMcpServer()
+
+		// Start keepalive broadcast to all clients every 30 seconds.
+		mcpServer.StartKeepalives(context.Background(), *mcpKeepaliveInterval)
 
 		mux := http.NewServeMux()
 		// Helper closure to map both trailing slash and no-trailing slash paths.

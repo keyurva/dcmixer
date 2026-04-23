@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
@@ -124,4 +125,26 @@ func registerTool[T_IN any, T_OUT any](s *DcMcpServer, name string, bizLogic fun
 
 	// Register tool with handler created by the factory
 	s.sdkServer.AddTool(tool, MakeHandler(bizLogic))
+}
+
+// StartKeepalives starts a background goroutine that broadcasts dummy JSON-RPC
+// notifications to all connected clients at the specified interval.
+// These keep alives help keep the connection alive through proxies, 
+// thereby avoiding the benign but annoying "MCP Error" messages in MCP clients.
+func (s *DcMcpServer) StartKeepalives(ctx context.Context, interval time.Duration) {
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				s.sdkServer.SendNotificationToAllClients(
+					"notifications/message",
+					map[string]any{"level": "debug", "message": "keepalive"},
+				)
+			}
+		}
+	}()
 }
