@@ -78,7 +78,7 @@ steps:
     waitFor: ["-"]
 
 substitutions:
-  _GO_PROTOC_VERSION: "2026-02-20"
+  _GO_PROTOC_VERSION: "2026-04-23"
 
 timeout: 3600s
 options:
