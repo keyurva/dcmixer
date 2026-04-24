@@ -17,7 +17,9 @@ package main
 import (
 	"context"
 	"flag"
+	"bytes"
 	"fmt"
+	"io"
 	"log"
 	"log/slog"
 	"net"
@@ -126,6 +128,26 @@ var (
 		"Comma separated list of indexes to use for embeddings resolution.",
 	)
 )
+
+func requestLoggingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bodyBytes, err := io.ReadAll(r.Body)
+		if err != nil {
+			slog.Error("Failed to read request body", "error", err)
+		}
+		r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+
+		slog.Info("HTTP request received",
+			"method", r.Method,
+			"path", r.URL.Path,
+			"query", r.URL.RawQuery,
+			"headers", r.Header,
+			"body", string(bodyBytes),
+			"remote_addr", r.RemoteAddr,
+		)
+		next.ServeHTTP(w, r)
+	})
+}
 
 func main() {
 	// Sets up structured logger defaults.
@@ -514,7 +536,7 @@ func main() {
 		registerPath("mcp")
 		registerPath("mixer-mcp")
 
-		if err := http.ListenAndServe(fmt.Sprintf(":%d", *httpPort), mux); err != nil {
+		if err := http.ListenAndServe(fmt.Sprintf(":%d", *httpPort), requestLoggingMiddleware(mux)); err != nil {
 			slog.Error("Failed to start HTTP server", "error", err)
 		}
 	}()
