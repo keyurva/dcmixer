@@ -446,6 +446,7 @@ func main() {
 	// Create server object
 	mixerServer := server.NewMixerServer(store, metadata, c, mapsClient, dispatcher, flags, *writeUsageLogs, *embeddingsServerURL, *resolveEmbeddingsIndexes, *useSpannerGraph)
 	pbs.RegisterMixerServer(srv, mixerServer)
+	pbs.RegisterHttpProxyServiceServer(srv, mixerServer)
 
 	// Subscribe to branch cache update
 	if *useBranchBigtable {
