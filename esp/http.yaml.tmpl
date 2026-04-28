@@ -1,0 +1,42 @@
+swagger: '2.0'
+info:
+  title: Data Commons HTTP Proxy
+  version: 1.0.0
+host:
+schemes:
+  - https
+paths:
+  /mcp:
+    get:
+      operationId: getMcp
+      x-google-backend:
+        address: http://127.0.0.1:12346
+        path_translation: APPEND_PATH_TO_ADDRESS
+      responses:
+        '200':
+          description: Success
+    post:
+      operationId: postMcp
+      x-google-backend:
+        address: http://127.0.0.1:12346
+        path_translation: APPEND_PATH_TO_ADDRESS
+      responses:
+        '200':
+          description: Success
+  /mixer-mcp:
+    get:
+      operationId: getMixerMcp
+      x-google-backend:
+        address: http://127.0.0.1:12346
+        path_translation: APPEND_PATH_TO_ADDRESS
+      responses:
+        '200':
+          description: Success
+    post:
+      operationId: postMixerMcp
+      x-google-backend:
+        address: http://127.0.0.1:12346
+        path_translation: APPEND_PATH_TO_ADDRESS
+      responses:
+        '200':
+          description: Success
