@@ -20,6 +20,7 @@ import (
 	"sort"
 	"strings"
 
+	pbv1 "github.com/datacommonsorg/mixer/internal/proto/v1"
 	pbv2 "github.com/datacommonsorg/mixer/internal/proto/v2"
 )
 
@@ -29,14 +30,13 @@ const (
 	exprMemberOf      = "->memberOf"
 	exprLinkedMembers = "<-linkedMemberOf"
 	exprRelevantVars  = "->relevantVariable"
-	exprConstraint    = "->constraintProperties"
 )
 
-// InspectIndicatorNodesRequest specifies the input DCIDs and optional place filter
-// for inspecting statistical indicator ontology neighborhoods.
+// InspectIndicatorNodesRequest specifies the input DCIDs and optional place filters
+// for inspecting statistical indicator metadata and ontology neighborhoods.
 type InspectIndicatorNodesRequest struct {
-	Dcids     []string `json:"dcids"`
-	PlaceDcid string   `json:"place_dcid,omitempty"`
+	Dcids      []string `json:"dcids"`
+	PlaceDcids []string `json:"place_dcids,omitempty"`
 }
 
 // DimensionSliceSummary captures a populated breakdown dimension and sample slice mappings.
@@ -46,11 +46,15 @@ type DimensionSliceSummary struct {
 	SampleSlices   []string `json:"sample_slices"`
 }
 
-// StatVarInspection contains the discovered constraint dimensions for a seed StatisticalVariable.
+// StatVarInspection contains unified metadata, provenance, and breakdown dimensions for a StatisticalVariable.
 type StatVarInspection struct {
-	SeedDcid   string                   `json:"seed_dcid"`
-	RootSvg    string                   `json:"root_svg"`
-	Dimensions []*DimensionSliceSummary `json:"dimensions"`
+	SeedDcid     string                   `json:"seed_dcid"`
+	Name         string                   `json:"name,omitempty"`
+	Provenances  []string                 `json:"provenances,omitempty"`
+	EarliestDate string                   `json:"earliest_date,omitempty"`
+	LatestDate   string                   `json:"latest_date,omitempty"`
+	RootSvg      string                   `json:"root_svg"`
+	Dimensions   []*DimensionSliceSummary `json:"dimensions"`
 }
 
 // TopicInspection contains the 1-hop curated headline variables and child topics for a Topic.
@@ -60,13 +64,13 @@ type TopicInspection struct {
 	ChildTopics       []string `json:"child_topics"`
 }
 
-// InspectIndicatorNodesResult aggregates ontology neighborhood inspections for Topics and StatVars.
+// InspectIndicatorNodesResult aggregates unified metadata and ontology inspections for Topics and StatVars.
 type InspectIndicatorNodesResult struct {
 	Topics   []*TopicInspection   `json:"topics,omitempty"`
 	StatVars []*StatVarInspection `json:"stat_vars,omitempty"`
 }
 
-// InspectIndicatorNodes traverses the indicator ontology for a batch of StatVar or Topic DCIDs.
+// InspectIndicatorNodes traverses the indicator ontology and retrieves unified metadata for Topics and StatVars.
 func (s *Service) InspectIndicatorNodes(
 	ctx context.Context,
 	req *InspectIndicatorNodesRequest,
@@ -87,7 +91,7 @@ func (s *Service) InspectIndicatorNodes(
 	}
 
 	if len(svDcids) > 0 {
-		statVars, err := s.inspectStatVarNodes(ctx, svDcids, req.PlaceDcid)
+		statVars, err := s.inspectStatVarNodes(ctx, svDcids, req.PlaceDcids)
 		if err != nil {
 			return nil, err
 		}
@@ -150,11 +154,11 @@ func (s *Service) inspectTopicNodes(
 	return out, nil
 }
 
-// inspectStatVarNodes resolves parent StatVarGroups and summarizes populated breakdown dimensions.
+// inspectStatVarNodes resolves seed metadata, provenances, and ontology breakdown dimensions.
 func (s *Service) inspectStatVarNodes(
 	ctx context.Context,
 	svDcids []string,
-	placeDcid string,
+	placeDcids []string,
 ) ([]*StatVarInspection, error) {
 	svgResp, err := s.mixer.V2Node(ctx, &pbv2.NodeRequest{
 		Nodes:    svDcids,
@@ -164,20 +168,67 @@ func (s *Service) inspectStatVarNodes(
 		return nil, err
 	}
 
+	bulkResp, err := s.mixer.V2BulkVariableInfo(ctx, &pbv1.BulkVariableInfoRequest{
+		Nodes: svDcids,
+	})
+	if err != nil {
+		return nil, err
+	}
+	summaryBySv := indexVariableSummaries(bulkResp)
+
 	var out []*StatVarInspection
 	for _, svDcid := range svDcids {
 		targetSvgIds := extractNonRootSvgIds(svgResp, svDcid, s.defaultSvgRoot)
-		dims, err := s.fetchDimensionSummariesForSvgs(ctx, targetSvgIds, placeDcid)
+		dims, err := s.fetchDimensionSummariesForSvgs(ctx, targetSvgIds, placeDcids)
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, &StatVarInspection{
+		inspection := &StatVarInspection{
 			SeedDcid:   svDcid,
 			RootSvg:    s.defaultSvgRoot,
 			Dimensions: dims,
-		})
+		}
+		populateSeedMetadata(inspection, summaryBySv[svDcid])
+		out = append(out, inspection)
 	}
 	return out, nil
+}
+
+// indexVariableSummaries indexes VariableInfoResponse objects by node DCID.
+func indexVariableSummaries(resp *pbv1.BulkVariableInfoResponse) map[string]*pbv1.VariableInfoResponse {
+	m := make(map[string]*pbv1.VariableInfoResponse)
+	if resp == nil {
+		return m
+	}
+	for _, item := range resp.GetData() {
+		if item.GetNode() != "" {
+			m[item.GetNode()] = item
+		}
+	}
+	return m
+}
+
+// populateSeedMetadata attaches provenance names and date boundaries from BulkVariableInfo.
+func populateSeedMetadata(inspection *StatVarInspection, infoResp *pbv1.VariableInfoResponse) {
+	if infoResp == nil || infoResp.GetInfo() == nil {
+		return
+	}
+	seenProv := make(map[string]bool)
+	for _, provSummary := range infoResp.GetInfo().GetProvenanceSummary() {
+		provName := provSummary.GetImportName()
+		if provName != "" && !seenProv[provName] {
+			seenProv[provName] = true
+			inspection.Provenances = append(inspection.Provenances, provName)
+		}
+		for _, series := range provSummary.GetSeriesSummary() {
+			if inspection.EarliestDate == "" || (series.GetEarliestDate() != "" && series.GetEarliestDate() < inspection.EarliestDate) {
+				inspection.EarliestDate = series.GetEarliestDate()
+			}
+			if inspection.LatestDate == "" || series.GetLatestDate() > inspection.LatestDate {
+				inspection.LatestDate = series.GetLatestDate()
+			}
+		}
+	}
 }
 
 // extractNonRootSvgIds extracts StatVarGroup IDs for a StatVar while filtering out the root container.
@@ -202,7 +253,7 @@ func extractNonRootSvgIds(resp *pbv2.NodeResponse, svDcid string, rootSvg string
 func (s *Service) fetchDimensionSummariesForSvgs(
 	ctx context.Context,
 	svgIds []string,
-	placeDcid string,
+	placeDcids []string,
 ) ([]*DimensionSliceSummary, error) {
 	if len(svgIds) == 0 {
 		return nil, nil
@@ -221,8 +272,8 @@ func (s *Service) fetchDimensionSummariesForSvgs(
 		return nil, nil
 	}
 
-	if placeDcid != "" {
-		candidateSvs, err = s.filterSvsByPlaceAvailability(ctx, candidateSvs, placeDcid)
+	if len(placeDcids) > 0 {
+		candidateSvs, err = s.filterSvsByPlaceAvailability(ctx, candidateSvs, placeDcids)
 		if err != nil {
 			return nil, err
 		}
@@ -253,15 +304,15 @@ func collectCandidateSvs(resp *pbv2.NodeResponse, svgIds []string) []string {
 	return svs
 }
 
-// filterSvsByPlaceAvailability filters candidate StatVars to those with observations at placeDcid.
+// filterSvsByPlaceAvailability filters candidate StatVars to those with observations at any requested placeDcid.
 func (s *Service) filterSvsByPlaceAvailability(
 	ctx context.Context,
 	candidateSvs []string,
-	placeDcid string,
+	placeDcids []string,
 ) ([]string, error) {
 	obsResp, err := s.mixer.V2Observation(ctx, &pbv2.ObservationRequest{
 		Variable: &pbv2.DcidOrExpression{Dcids: candidateSvs},
-		Entity:   &pbv2.DcidOrExpression{Dcids: []string{placeDcid}},
+		Entity:   &pbv2.DcidOrExpression{Dcids: placeDcids},
 		Select:   []string{"variable", "entity"},
 	})
 	if err != nil {

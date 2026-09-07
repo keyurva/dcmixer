@@ -72,6 +72,21 @@ func TestInspectIndicatorNodes(t *testing.T) {
 				},
 			},
 		},
+		bulkData: map[string]*pb.StatVarSummary{
+			"Annual_Emissions_GreenhouseGas_NonBiogenic": {
+				ProvenanceSummary: map[string]*pb.StatVarSummary_ProvenanceSummary{
+					"US_EPA": {
+						ImportName: "US EPA GHG Inventory",
+						SeriesSummary: []*pb.StatVarSummary_SeriesSummary{
+							{
+								EarliestDate: "1990",
+								LatestDate:   "2022",
+							},
+						},
+					},
+				},
+			},
+		},
 		obsData: map[string]*pb.Facet{
 			"Annual_Emissions_GreenhouseGas_Transportation_NonBiogenic": {
 				ImportName: "TestEmissions",
@@ -84,8 +99,8 @@ func TestInspectIndicatorNodes(t *testing.T) {
 	})
 
 	req := &InspectIndicatorNodesRequest{
-		Dcids:     []string{"dc/topic/Economy", "Annual_Emissions_GreenhouseGas_NonBiogenic"},
-		PlaceDcid: "geoId/06",
+		Dcids:      []string{"dc/topic/Economy", "Annual_Emissions_GreenhouseGas_NonBiogenic"},
+		PlaceDcids: []string{"geoId/06", "geoId/48"},
 	}
 
 	got, err := service.InspectIndicatorNodes(ctx, req)
@@ -103,8 +118,11 @@ func TestInspectIndicatorNodes(t *testing.T) {
 		},
 		StatVars: []*StatVarInspection{
 			{
-				SeedDcid: "Annual_Emissions_GreenhouseGas_NonBiogenic",
-				RootSvg:  "dc/g/CustomRoot",
+				SeedDcid:     "Annual_Emissions_GreenhouseGas_NonBiogenic",
+				Provenances:  []string{"US EPA GHG Inventory"},
+				EarliestDate: "1990",
+				LatestDate:   "2022",
+				RootSvg:      "dc/g/CustomRoot",
 				Dimensions: []*DimensionSliceSummary{
 					{
 						Dimension:      "emissionSource",
