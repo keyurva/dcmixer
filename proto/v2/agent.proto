@@ -220,3 +220,38 @@ message GetVariableMetadataResponse {
   map<string, VariableMetadata> variables = 2;
   map<string, ProvenanceMetadata> provenances = 3;
 }
+
+// Request payload for the inspect_indicator_nodes tool endpoint.
+message InspectIndicatorNodesRequest {
+  repeated string dcids = 1;
+  repeated string place_dcids = 2;
+}
+
+// Response payload for the inspect_indicator_nodes tool endpoint.
+message InspectIndicatorNodesResponse {
+  message DimensionSliceSummary {
+    string dimension = 1;
+    int32 available_count = 2;
+    repeated string sample_slices = 3;
+  }
+
+  message StatVarInspection {
+    string seed_dcid = 1;
+    string name = 2;
+    repeated string provenances = 3;
+    string earliest_date = 4;
+    string latest_date = 5;
+    string root_svg = 6;
+    repeated DimensionSliceSummary dimensions = 7;
+  }
+
+  message TopicInspection {
+    string topic_dcid = 1;
+    repeated string headline_variables = 2;
+    repeated string child_topics = 3;
+  }
+
+  repeated TopicInspection topics = 1;
+  repeated StatVarInspection stat_vars = 2;
+}
+

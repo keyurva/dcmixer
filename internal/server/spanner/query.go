@@ -31,6 +31,7 @@ import (
 	"github.com/datacommonsorg/mixer/internal/metrics"
 	pb "github.com/datacommonsorg/mixer/internal/proto"
 	pbv1 "github.com/datacommonsorg/mixer/internal/proto/v1"
+	pbv2 "github.com/datacommonsorg/mixer/internal/proto/v2"
 	"github.com/datacommonsorg/mixer/internal/server/datasources"
 	v2 "github.com/datacommonsorg/mixer/internal/server/v2"
 	"github.com/datacommonsorg/mixer/internal/translator/types"
@@ -1319,3 +1320,75 @@ func IsTableNotFoundError(err error) bool {
 	}
 	return false
 }
+
+// GetStatVarDimensionsByPrefix queries Spanner directly for breakdown dimensions and sample StatVars sharing a prefix.
+func (sc *spannerDatabaseClient) GetStatVarDimensionsByPrefix(ctx context.Context, seedDcid string) ([]*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary, error) {
+	prefix := seedDcid + "_"
+
+	sql := `
+WITH CandidateSVs AS (
+  SELECT subject_id, object_id
+  FROM Edge
+  WHERE subject_id >= @start_key
+    AND subject_id < @end_key
+    AND predicate = 'constraintProperties'
+  LIMIT 5000
+)
+SELECT
+  e.object_id AS dimension_prop,
+  COUNT(DISTINCT e.subject_id) AS sv_count,
+  ARRAY_AGG(DISTINCT v.object_id LIMIT 15) AS sample_values,
+  ARRAY_AGG(DISTINCT e.subject_id LIMIT 5) AS sample_svs
+FROM CandidateSVs e
+LEFT JOIN Edge v
+  ON e.subject_id = v.subject_id
+  AND e.object_id = v.predicate
+GROUP BY dimension_prop
+ORDER BY sv_count DESC
+LIMIT 20`
+
+	stmt := spanner.Statement{
+		SQL: sql,
+		Params: map[string]interface{}{
+			"start_key": prefix,
+			"end_key":   prefix + "\uffff",
+		},
+	}
+
+	var dimensions []*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary
+	err := sc.executeQuery(ctx, stmt, func(iter *spanner.RowIterator) error {
+		for {
+			row, err := iter.Next()
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				return err
+			}
+			var prop string
+			var count int64
+			var sampleVals []spanner.NullString
+			var sampleSVsNull []spanner.NullString
+			if err := row.Columns(&prop, &count, &sampleVals, &sampleSVsNull); err != nil {
+				return fmt.Errorf("error reading row in GetStatVarDimensionsByPrefix: %w", err)
+			}
+			var sampleSVs []string
+			for _, ns := range sampleSVsNull {
+				if ns.Valid && ns.StringVal != "" {
+					sampleSVs = append(sampleSVs, ns.StringVal)
+				}
+			}
+			dimensions = append(dimensions, &pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary{
+				Dimension:      prop,
+				AvailableCount: int32(count),
+				SampleSlices:   sampleSVs,
+			})
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return dimensions, nil
+}
+

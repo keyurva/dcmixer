@@ -21,6 +21,7 @@ import (
 	pb "github.com/datacommonsorg/mixer/internal/proto"
 	pbv2 "github.com/datacommonsorg/mixer/internal/proto/v2"
 	"github.com/google/go-cmp/cmp"
+	"google.golang.org/protobuf/testing/protocmp"
 )
 
 func TestInspectIndicatorNodes(t *testing.T) {
@@ -88,6 +89,9 @@ func TestInspectIndicatorNodes(t *testing.T) {
 			},
 		},
 		obsData: map[string]*pb.Facet{
+			"Annual_Emissions_GreenhouseGas_NonBiogenic": {
+				ImportName: "US EPA GHG Inventory",
+			},
 			"Annual_Emissions_GreenhouseGas_Transportation_NonBiogenic": {
 				ImportName: "TestEmissions",
 			},
@@ -98,7 +102,7 @@ func TestInspectIndicatorNodes(t *testing.T) {
 		DefaultSvgRoot: "dc/g/CustomRoot",
 	})
 
-	req := &InspectIndicatorNodesRequest{
+	req := &pbv2.InspectIndicatorNodesRequest{
 		Dcids:      []string{"dc/topic/Economy", "Annual_Emissions_GreenhouseGas_NonBiogenic"},
 		PlaceDcids: []string{"geoId/06", "geoId/48"},
 	}
@@ -108,22 +112,22 @@ func TestInspectIndicatorNodes(t *testing.T) {
 		t.Fatalf("InspectIndicatorNodes returned unexpected error: %v", err)
 	}
 
-	want := &InspectIndicatorNodesResult{
-		Topics: []*TopicInspection{
+	want := &pbv2.InspectIndicatorNodesResponse{
+		Topics: []*pbv2.InspectIndicatorNodesResponse_TopicInspection{
 			{
 				TopicDcid:         "dc/topic/Economy",
 				HeadlineVariables: []string{"Count_Person_Employed"},
 				ChildTopics:       []string{"dc/topic/Employment"},
 			},
 		},
-		StatVars: []*StatVarInspection{
+		StatVars: []*pbv2.InspectIndicatorNodesResponse_StatVarInspection{
 			{
 				SeedDcid:     "Annual_Emissions_GreenhouseGas_NonBiogenic",
-				Provenances:  []string{"US EPA GHG Inventory"},
-				EarliestDate: "1990",
-				LatestDate:   "2022",
+				Provenances:  []string{"US EPA GHG Inventory", "TestEmissions"},
+				EarliestDate: "2010",
+				LatestDate:   "2020",
 				RootSvg:      "dc/g/CustomRoot",
-				Dimensions: []*DimensionSliceSummary{
+				Dimensions: []*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary{
 					{
 						Dimension:      "emissionSource",
 						AvailableCount: 1,
@@ -136,7 +140,7 @@ func TestInspectIndicatorNodes(t *testing.T) {
 		},
 	}
 
-	if diff := cmp.Diff(want, got); diff != "" {
+	if diff := cmp.Diff(want, got, protocmp.Transform()); diff != "" {
 		t.Errorf("InspectIndicatorNodes mismatch (-want +got):\n%s", diff)
 	}
 }

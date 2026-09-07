@@ -56,3 +56,23 @@ func (s *Server) V2AgentGetVariableMetadata(
 ) (*pbv2.GetVariableMetadataResponse, error) {
 	return s.agentService.GetVariableMetadata(ctx, in)
 }
+
+// V2AgentInspectIndicatorNodes implements API for mixer.V2AgentInspectIndicatorNodes.
+// It delegates incoming RPC requests directly to the isolated agent.Service layer.
+func (s *Server) V2AgentInspectIndicatorNodes(
+	ctx context.Context,
+	in *pbv2.InspectIndicatorNodesRequest,
+) (*pbv2.InspectIndicatorNodesResponse, error) {
+	return s.agentService.InspectIndicatorNodes(ctx, in)
+}
+
+// GetStatVarDimensionsByPrefix delegates to the underlying SpannerClient if available.
+func (s *Server) GetStatVarDimensionsByPrefix(ctx context.Context, seedDcid string) ([]*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary, error) {
+	if sc, ok := s.spannerStalenessTimestampProvider.(interface {
+		GetStatVarDimensionsByPrefix(ctx context.Context, seedDcid string) ([]*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary, error)
+	}); ok && sc != nil {
+		return sc.GetStatVarDimensionsByPrefix(ctx, seedDcid)
+	}
+	return nil, nil
+}
+

@@ -254,6 +254,14 @@ service Mixer {
     };
   }
 
+  rpc V2AgentInspectIndicatorNodes(datacommons.v2.InspectIndicatorNodesRequest)
+      returns (datacommons.v2.InspectIndicatorNodesResponse) {
+    option (google.api.http) = {
+      get : "/v2/agent/inspect_indicator_nodes"
+      additional_bindings : {post : "/v2/agent/inspect_indicator_nodes" body : "*"}
+    };
+  }
+
   // Get rankings for given stat var DCIDs.
   rpc V2GetLocationsRankings(GetLocationsRankingsRequest)
       returns (GetLocationsRankingsResponse) {

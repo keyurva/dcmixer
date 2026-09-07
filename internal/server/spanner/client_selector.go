@@ -19,6 +19,7 @@ import (
 	"log/slog"
 
 	sdmxpb "github.com/datacommonsorg/mixer/internal/proto/sdmx"
+	pbv2 "github.com/datacommonsorg/mixer/internal/proto/v2"
 	v2 "github.com/datacommonsorg/mixer/internal/server/v2"
 	"github.com/datacommonsorg/mixer/internal/util"
 	"google.golang.org/grpc/metadata"
@@ -238,3 +239,14 @@ func logMultiEntityInvocation(methodName string, args ...any) {
 	fullArgs := append([]any{"method", methodName}, args...)
 	slog.Info("Invoking multi-entity Spanner schema", fullArgs...)
 }
+
+// GetStatVarDimensionsByPrefix forwards to the base Spanner client if supported.
+func (s *schemaSelectorClient) GetStatVarDimensionsByPrefix(ctx context.Context, seedDcid string) ([]*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary, error) {
+	if sc, ok := s.SpannerClient.(interface {
+		GetStatVarDimensionsByPrefix(ctx context.Context, seedDcid string) ([]*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary, error)
+	}); ok && sc != nil {
+		return sc.GetStatVarDimensionsByPrefix(ctx, seedDcid)
+	}
+	return nil, nil
+}
+
