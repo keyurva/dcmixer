@@ -45,56 +45,57 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	Mixer_V3SdmxData_FullMethodName                   = "/datacommons.Mixer/V3SdmxData"
-	Mixer_V3SdmxAvailability_FullMethodName           = "/datacommons.Mixer/V3SdmxAvailability"
-	Mixer_V2InternalSdmxData_FullMethodName           = "/datacommons.Mixer/V2InternalSdmxData"
-	Mixer_V2InternalSdmxAvailability_FullMethodName   = "/datacommons.Mixer/V2InternalSdmxAvailability"
-	Mixer_V3Node_FullMethodName                       = "/datacommons.Mixer/V3Node"
-	Mixer_V3Observation_FullMethodName                = "/datacommons.Mixer/V3Observation"
-	Mixer_V3NodeSearch_FullMethodName                 = "/datacommons.Mixer/V3NodeSearch"
-	Mixer_V3Resolve_FullMethodName                    = "/datacommons.Mixer/V3Resolve"
-	Mixer_V3Event_FullMethodName                      = "/datacommons.Mixer/V3Event"
-	Mixer_V3Sparql_FullMethodName                     = "/datacommons.Mixer/V3Sparql"
-	Mixer_V3BulkVariableInfo_FullMethodName           = "/datacommons.Mixer/V3BulkVariableInfo"
-	Mixer_V3BulkVariableGroupInfo_FullMethodName      = "/datacommons.Mixer/V3BulkVariableGroupInfo"
-	Mixer_V2Sparql_FullMethodName                     = "/datacommons.Mixer/V2Sparql"
-	Mixer_V2Resolve_FullMethodName                    = "/datacommons.Mixer/V2Resolve"
-	Mixer_V2Node_FullMethodName                       = "/datacommons.Mixer/V2Node"
-	Mixer_V2Event_FullMethodName                      = "/datacommons.Mixer/V2Event"
-	Mixer_V2Observation_FullMethodName                = "/datacommons.Mixer/V2Observation"
-	Mixer_V2RecognizePlaces_FullMethodName            = "/datacommons.Mixer/V2RecognizePlaces"
-	Mixer_FilterStatVarsByEntity_FullMethodName       = "/datacommons.Mixer/FilterStatVarsByEntity"
-	Mixer_V2BulkVariableInfo_FullMethodName           = "/datacommons.Mixer/V2BulkVariableInfo"
-	Mixer_V2BulkVariableGroupInfo_FullMethodName      = "/datacommons.Mixer/V2BulkVariableGroupInfo"
-	Mixer_V2AgentResolvePlaces_FullMethodName         = "/datacommons.Mixer/V2AgentResolvePlaces"
-	Mixer_V2AgentSearchIndicators_FullMethodName      = "/datacommons.Mixer/V2AgentSearchIndicators"
-	Mixer_V2AgentGetObservations_FullMethodName       = "/datacommons.Mixer/V2AgentGetObservations"
-	Mixer_V2AgentGetVariableMetadata_FullMethodName   = "/datacommons.Mixer/V2AgentGetVariableMetadata"
-	Mixer_V2AgentInspectIndicatorNodes_FullMethodName = "/datacommons.Mixer/V2AgentInspectIndicatorNodes"
-	Mixer_V2GetLocationsRankings_FullMethodName       = "/datacommons.Mixer/V2GetLocationsRankings"
-	Mixer_Query_FullMethodName                        = "/datacommons.Mixer/Query"
-	Mixer_GetStats_FullMethodName                     = "/datacommons.Mixer/GetStats"
-	Mixer_GetLocationsRankings_FullMethodName         = "/datacommons.Mixer/GetLocationsRankings"
-	Mixer_GetRelatedLocations_FullMethodName          = "/datacommons.Mixer/GetRelatedLocations"
-	Mixer_GetVersion_FullMethodName                   = "/datacommons.Mixer/GetVersion"
-	Mixer_BulkPropertyValues_FullMethodName           = "/datacommons.Mixer/BulkPropertyValues"
-	Mixer_BulkLinkedPropertyValues_FullMethodName     = "/datacommons.Mixer/BulkLinkedPropertyValues"
-	Mixer_BulkPlaceInfo_FullMethodName                = "/datacommons.Mixer/BulkPlaceInfo"
-	Mixer_BulkVariableInfo_FullMethodName             = "/datacommons.Mixer/BulkVariableInfo"
-	Mixer_BulkVariableGroupInfo_FullMethodName        = "/datacommons.Mixer/BulkVariableGroupInfo"
-	Mixer_BulkObservationsPoint_FullMethodName        = "/datacommons.Mixer/BulkObservationsPoint"
-	Mixer_BulkObservationsSeries_FullMethodName       = "/datacommons.Mixer/BulkObservationsSeries"
-	Mixer_BulkObservationsSeriesLinked_FullMethodName = "/datacommons.Mixer/BulkObservationsSeriesLinked"
-	Mixer_BulkObservationDatesLinked_FullMethodName   = "/datacommons.Mixer/BulkObservationDatesLinked"
-	Mixer_PlacePage_FullMethodName                    = "/datacommons.Mixer/PlacePage"
-	Mixer_VariableAncestors_FullMethodName            = "/datacommons.Mixer/VariableAncestors"
-	Mixer_SearchStatVar_FullMethodName                = "/datacommons.Mixer/SearchStatVar"
-	Mixer_ResolveEntities_FullMethodName              = "/datacommons.Mixer/ResolveEntities"
-	Mixer_ResolveCoordinates_FullMethodName           = "/datacommons.Mixer/ResolveCoordinates"
-	Mixer_ResolveIds_FullMethodName                   = "/datacommons.Mixer/ResolveIds"
-	Mixer_BulkFindEntities_FullMethodName             = "/datacommons.Mixer/BulkFindEntities"
-	Mixer_RecognizePlaces_FullMethodName              = "/datacommons.Mixer/RecognizePlaces"
-	Mixer_GetImportTableData_FullMethodName           = "/datacommons.Mixer/GetImportTableData"
+	Mixer_V3SdmxData_FullMethodName                      = "/datacommons.Mixer/V3SdmxData"
+	Mixer_V3SdmxAvailability_FullMethodName              = "/datacommons.Mixer/V3SdmxAvailability"
+	Mixer_V2InternalSdmxData_FullMethodName              = "/datacommons.Mixer/V2InternalSdmxData"
+	Mixer_V2InternalSdmxAvailability_FullMethodName      = "/datacommons.Mixer/V2InternalSdmxAvailability"
+	Mixer_V3Node_FullMethodName                          = "/datacommons.Mixer/V3Node"
+	Mixer_V3Observation_FullMethodName                   = "/datacommons.Mixer/V3Observation"
+	Mixer_V3NodeSearch_FullMethodName                    = "/datacommons.Mixer/V3NodeSearch"
+	Mixer_V3Resolve_FullMethodName                       = "/datacommons.Mixer/V3Resolve"
+	Mixer_V3Event_FullMethodName                         = "/datacommons.Mixer/V3Event"
+	Mixer_V3Sparql_FullMethodName                        = "/datacommons.Mixer/V3Sparql"
+	Mixer_V3BulkVariableInfo_FullMethodName              = "/datacommons.Mixer/V3BulkVariableInfo"
+	Mixer_V3BulkVariableGroupInfo_FullMethodName         = "/datacommons.Mixer/V3BulkVariableGroupInfo"
+	Mixer_V2Sparql_FullMethodName                        = "/datacommons.Mixer/V2Sparql"
+	Mixer_V2Resolve_FullMethodName                       = "/datacommons.Mixer/V2Resolve"
+	Mixer_V2Node_FullMethodName                          = "/datacommons.Mixer/V2Node"
+	Mixer_V2Event_FullMethodName                         = "/datacommons.Mixer/V2Event"
+	Mixer_V2Observation_FullMethodName                   = "/datacommons.Mixer/V2Observation"
+	Mixer_V2RecognizePlaces_FullMethodName               = "/datacommons.Mixer/V2RecognizePlaces"
+	Mixer_FilterStatVarsByEntity_FullMethodName          = "/datacommons.Mixer/FilterStatVarsByEntity"
+	Mixer_V2BulkVariableInfo_FullMethodName              = "/datacommons.Mixer/V2BulkVariableInfo"
+	Mixer_V2BulkVariableGroupInfo_FullMethodName         = "/datacommons.Mixer/V2BulkVariableGroupInfo"
+	Mixer_V2AgentResolvePlaces_FullMethodName            = "/datacommons.Mixer/V2AgentResolvePlaces"
+	Mixer_V2AgentSearchIndicators_FullMethodName         = "/datacommons.Mixer/V2AgentSearchIndicators"
+	Mixer_V2AgentGetObservations_FullMethodName          = "/datacommons.Mixer/V2AgentGetObservations"
+	Mixer_V2AgentGetVariableMetadata_FullMethodName      = "/datacommons.Mixer/V2AgentGetVariableMetadata"
+	Mixer_V2AgentInspectIndicatorNodes_FullMethodName    = "/datacommons.Mixer/V2AgentInspectIndicatorNodes"
+	Mixer_V2AgentGetStatVarsByConstraints_FullMethodName = "/datacommons.Mixer/V2AgentGetStatVarsByConstraints"
+	Mixer_V2GetLocationsRankings_FullMethodName          = "/datacommons.Mixer/V2GetLocationsRankings"
+	Mixer_Query_FullMethodName                           = "/datacommons.Mixer/Query"
+	Mixer_GetStats_FullMethodName                        = "/datacommons.Mixer/GetStats"
+	Mixer_GetLocationsRankings_FullMethodName            = "/datacommons.Mixer/GetLocationsRankings"
+	Mixer_GetRelatedLocations_FullMethodName             = "/datacommons.Mixer/GetRelatedLocations"
+	Mixer_GetVersion_FullMethodName                      = "/datacommons.Mixer/GetVersion"
+	Mixer_BulkPropertyValues_FullMethodName              = "/datacommons.Mixer/BulkPropertyValues"
+	Mixer_BulkLinkedPropertyValues_FullMethodName        = "/datacommons.Mixer/BulkLinkedPropertyValues"
+	Mixer_BulkPlaceInfo_FullMethodName                   = "/datacommons.Mixer/BulkPlaceInfo"
+	Mixer_BulkVariableInfo_FullMethodName                = "/datacommons.Mixer/BulkVariableInfo"
+	Mixer_BulkVariableGroupInfo_FullMethodName           = "/datacommons.Mixer/BulkVariableGroupInfo"
+	Mixer_BulkObservationsPoint_FullMethodName           = "/datacommons.Mixer/BulkObservationsPoint"
+	Mixer_BulkObservationsSeries_FullMethodName          = "/datacommons.Mixer/BulkObservationsSeries"
+	Mixer_BulkObservationsSeriesLinked_FullMethodName    = "/datacommons.Mixer/BulkObservationsSeriesLinked"
+	Mixer_BulkObservationDatesLinked_FullMethodName      = "/datacommons.Mixer/BulkObservationDatesLinked"
+	Mixer_PlacePage_FullMethodName                       = "/datacommons.Mixer/PlacePage"
+	Mixer_VariableAncestors_FullMethodName               = "/datacommons.Mixer/VariableAncestors"
+	Mixer_SearchStatVar_FullMethodName                   = "/datacommons.Mixer/SearchStatVar"
+	Mixer_ResolveEntities_FullMethodName                 = "/datacommons.Mixer/ResolveEntities"
+	Mixer_ResolveCoordinates_FullMethodName              = "/datacommons.Mixer/ResolveCoordinates"
+	Mixer_ResolveIds_FullMethodName                      = "/datacommons.Mixer/ResolveIds"
+	Mixer_BulkFindEntities_FullMethodName                = "/datacommons.Mixer/BulkFindEntities"
+	Mixer_RecognizePlaces_FullMethodName                 = "/datacommons.Mixer/RecognizePlaces"
+	Mixer_GetImportTableData_FullMethodName              = "/datacommons.Mixer/GetImportTableData"
 )
 
 // MixerClient is the client API for Mixer service.
@@ -133,6 +134,7 @@ type MixerClient interface {
 	V2AgentGetObservations(ctx context.Context, in *v2.GetObservationsRequest, opts ...grpc.CallOption) (*v2.GetObservationsResponse, error)
 	V2AgentGetVariableMetadata(ctx context.Context, in *v2.GetVariableMetadataRequest, opts ...grpc.CallOption) (*v2.GetVariableMetadataResponse, error)
 	V2AgentInspectIndicatorNodes(ctx context.Context, in *v2.InspectIndicatorNodesRequest, opts ...grpc.CallOption) (*v2.InspectIndicatorNodesResponse, error)
+	V2AgentGetStatVarsByConstraints(ctx context.Context, in *v2.GetStatVarsByConstraintsRequest, opts ...grpc.CallOption) (*v2.GetStatVarsByConstraintsResponse, error)
 	// Get rankings for given stat var DCIDs.
 	V2GetLocationsRankings(ctx context.Context, in *proto.GetLocationsRankingsRequest, opts ...grpc.CallOption) (*proto.GetLocationsRankingsResponse, error)
 	// Query DataCommons Graph with Sparql.
@@ -452,6 +454,16 @@ func (c *mixerClient) V2AgentInspectIndicatorNodes(ctx context.Context, in *v2.I
 	return out, nil
 }
 
+func (c *mixerClient) V2AgentGetStatVarsByConstraints(ctx context.Context, in *v2.GetStatVarsByConstraintsRequest, opts ...grpc.CallOption) (*v2.GetStatVarsByConstraintsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(v2.GetStatVarsByConstraintsResponse)
+	err := c.cc.Invoke(ctx, Mixer_V2AgentGetStatVarsByConstraints_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *mixerClient) V2GetLocationsRankings(ctx context.Context, in *proto.GetLocationsRankingsRequest, opts ...grpc.CallOption) (*proto.GetLocationsRankingsResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(proto.GetLocationsRankingsResponse)
@@ -728,6 +740,7 @@ type MixerServer interface {
 	V2AgentGetObservations(context.Context, *v2.GetObservationsRequest) (*v2.GetObservationsResponse, error)
 	V2AgentGetVariableMetadata(context.Context, *v2.GetVariableMetadataRequest) (*v2.GetVariableMetadataResponse, error)
 	V2AgentInspectIndicatorNodes(context.Context, *v2.InspectIndicatorNodesRequest) (*v2.InspectIndicatorNodesResponse, error)
+	V2AgentGetStatVarsByConstraints(context.Context, *v2.GetStatVarsByConstraintsRequest) (*v2.GetStatVarsByConstraintsResponse, error)
 	// Get rankings for given stat var DCIDs.
 	V2GetLocationsRankings(context.Context, *proto.GetLocationsRankingsRequest) (*proto.GetLocationsRankingsResponse, error)
 	// Query DataCommons Graph with Sparql.
@@ -854,6 +867,9 @@ func (UnimplementedMixerServer) V2AgentGetVariableMetadata(context.Context, *v2.
 }
 func (UnimplementedMixerServer) V2AgentInspectIndicatorNodes(context.Context, *v2.InspectIndicatorNodesRequest) (*v2.InspectIndicatorNodesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method V2AgentInspectIndicatorNodes not implemented")
+}
+func (UnimplementedMixerServer) V2AgentGetStatVarsByConstraints(context.Context, *v2.GetStatVarsByConstraintsRequest) (*v2.GetStatVarsByConstraintsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method V2AgentGetStatVarsByConstraints not implemented")
 }
 func (UnimplementedMixerServer) V2GetLocationsRankings(context.Context, *proto.GetLocationsRankingsRequest) (*proto.GetLocationsRankingsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method V2GetLocationsRankings not implemented")
@@ -1408,6 +1424,24 @@ func _Mixer_V2AgentInspectIndicatorNodes_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Mixer_V2AgentGetStatVarsByConstraints_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(v2.GetStatVarsByConstraintsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MixerServer).V2AgentGetStatVarsByConstraints(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Mixer_V2AgentGetStatVarsByConstraints_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MixerServer).V2AgentGetStatVarsByConstraints(ctx, req.(*v2.GetStatVarsByConstraintsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Mixer_V2GetLocationsRankings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(proto.GetLocationsRankingsRequest)
 	if err := dec(in); err != nil {
@@ -1946,6 +1980,10 @@ var Mixer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "V2AgentInspectIndicatorNodes",
 			Handler:    _Mixer_V2AgentInspectIndicatorNodes_Handler,
+		},
+		{
+			MethodName: "V2AgentGetStatVarsByConstraints",
+			Handler:    _Mixer_V2AgentGetStatVarsByConstraints_Handler,
 		},
 		{
 			MethodName: "V2GetLocationsRankings",

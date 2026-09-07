@@ -84,6 +84,9 @@ message SearchIndicatorsResponse {
 
   // Variables Table (columns: ["dcid", "name", "placesWithData", "observationProperties"])
   Table variable_candidates = 8;
+
+  // Constraint Values Table (columns: ["seed_dcid", "property", "value_dcid", "value_name"])
+  Table constraint_values = 9;
 }
 
 message EntityList {
@@ -233,6 +236,7 @@ message InspectIndicatorNodesResponse {
     string dimension = 1;
     int32 available_count = 2;
     repeated string sample_slices = 3;
+    repeated string constraint_values = 4;
   }
 
   message StatVarInspection {
@@ -253,5 +257,22 @@ message InspectIndicatorNodesResponse {
 
   repeated TopicInspection topics = 1;
   repeated StatVarInspection stat_vars = 2;
+}
+
+// Request payload for the get_stat_vars_by_constraints tool endpoint.
+message GetStatVarsByConstraintsRequest {
+  message ConstraintValueList {
+    repeated string values = 1;
+  }
+  string seed_dcid = 1;
+  map<string, ConstraintValueList> constraints = 2;
+  repeated string place_dcids = 3;
+}
+
+// Response payload for the get_stat_vars_by_constraints tool endpoint.
+message GetStatVarsByConstraintsResponse {
+  string seed_dcid = 1;
+  // Tabular matched StatVars (columns: ["dcid", "name", "match_type", <constraint_prop_1>, ...])
+  Table stat_vars = 2;
 }
 

@@ -92,15 +92,42 @@ func (m *TopicCacheManager) FetchTopicsFromKG(ctx context.Context) (*pb.TopicHie
 
 // parseStatVarInfo extracts metadata properties from a LinkedGraph and populates a StatVarInfo struct.
 func parseStatVarInfo(dcid string, graph *pbv2.LinkedGraph) *StatVarInfo {
-	info := &StatVarInfo{Dcid: dcid}
+	info := &StatVarInfo{
+		Dcid:                 dcid,
+		ConstraintProperties: make(map[string]ConstraintValue),
+	}
 	if graph == nil || graph.GetArcs() == nil {
 		return info
 	}
-	if arc, exists := graph.GetArcs()["name"]; exists && len(arc.GetNodes()) > 0 {
+	arcs := graph.GetArcs()
+	if arc, exists := arcs["name"]; exists && len(arc.GetNodes()) > 0 {
 		info.Name = extractName(arc.GetNodes()[0])
 	}
-	info.ObservationProperties = extractValues(graph.GetArcs()["observationProperties"])
-	info.EntityMappings = extractValues(graph.GetArcs()["entityMapping"])
+	if vals := extractValues(arcs["populationType"]); len(vals) > 0 {
+		info.PopulationType = vals[0]
+	}
+	if vals := extractValues(arcs["measuredProperty"]); len(vals) > 0 {
+		info.MeasuredProperty = vals[0]
+	}
+	if vals := extractValues(arcs["statType"]); len(vals) > 0 {
+		info.StatType = vals[0]
+	}
+	for _, prop := range extractValues(arcs["constraintProperties"]) {
+		if valArc, ok := arcs[prop]; ok && len(valArc.GetNodes()) > 0 {
+			n := valArc.GetNodes()[0]
+			valDcid := n.GetDcid()
+			if valDcid == "" {
+				valDcid = n.GetValue()
+			}
+			valName := extractName(n)
+			info.ConstraintProperties[prop] = ConstraintValue{
+				Dcid: valDcid,
+				Name: valName,
+			}
+		}
+	}
+	info.ObservationProperties = extractValues(arcs["observationProperties"])
+	info.EntityMappings = extractValues(arcs["entityMapping"])
 	return info
 }
 
@@ -108,7 +135,10 @@ func parseStatVarInfo(dcid string, graph *pbv2.LinkedGraph) *StatVarInfo {
 func parseStatVarInfos(dcids []string, resp *pbv2.NodeResponse) map[string]*StatVarInfo {
 	res := make(map[string]*StatVarInfo, len(dcids))
 	for _, dcid := range dcids {
-		res[dcid] = &StatVarInfo{Dcid: dcid}
+		res[dcid] = &StatVarInfo{
+			Dcid:                 dcid,
+			ConstraintProperties: make(map[string]ConstraintValue),
+		}
 	}
 	if resp == nil || resp.GetData() == nil {
 		return res
@@ -119,12 +149,12 @@ func parseStatVarInfos(dcids []string, resp *pbv2.NodeResponse) map[string]*Stat
 	return res
 }
 
-// fetchStatVarInfos queries the Knowledge Graph for name, observationProperties, and entityMapping.
+// fetchStatVarInfos queries the Knowledge Graph for all outgoing properties of Statistical Variables.
 func (m *TopicCacheManager) fetchStatVarInfos(ctx context.Context, dcids []string) (map[string]*StatVarInfo, error) {
 	defer util.TimeTrack(time.Now(), "topic: fetchStatVarInfos")
 	req := &pbv2.NodeRequest{
 		Nodes:    dcids,
-		Property: "->[name, observationProperties, entityMapping]",
+		Property: "->*",
 	}
 	resp, err := m.fetcher.NodeFetchAll(ctx, req)
 	if err != nil {

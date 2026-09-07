@@ -150,6 +150,10 @@ var statements = struct {
 	checkGroupSourceExistenceFromKV string
 	// Check existence of variable groups against places.
 	checkGroupPlaceExistence string
+	// Fetch breakdown dimensions and constraint values for a seed stat var.
+	getStatVarDimensionsBySignature string
+	// Fetch matched breakdown stat vars by structural signature and constraints.
+	getStatVarsByConstraints string
 }{
 	getCompletionTimestamp: `		SELECT
 			CompletionTimestamp
@@ -811,4 +815,45 @@ OR CreationTimestamp > (
 		  AND e.object_id IN UNNEST(@variableGroups)
 		  AND o.observation_about IN UNNEST(@entities)
 		ORDER BY variable, entity`,
+	getStatVarDimensionsBySignature: `
+WITH CandidateSVs AS (
+  SELECT subject_id, object_id
+  FROM Edge
+  WHERE subject_id >= @start_key
+    AND subject_id < @end_key
+    AND subject_id LIKE @like_pattern
+    AND predicate = 'constraintProperties'
+  LIMIT 5000
+)
+SELECT
+  e.object_id AS dimension_prop,
+  COUNT(DISTINCT e.subject_id) AS sv_count,
+  ARRAY_AGG(DISTINCT CONCAT(v.object_id, '|||', IFNULL(dest.name, '')) LIMIT 100) AS sample_values,
+  ARRAY_AGG(DISTINCT e.subject_id LIMIT 5) AS sample_svs
+FROM CandidateSVs e
+LEFT JOIN Edge v
+  ON e.subject_id = v.subject_id
+  AND e.object_id = v.predicate
+LEFT JOIN Node dest
+  ON v.object_id = dest.subject_id
+GROUP BY dimension_prop
+ORDER BY sv_count DESC
+LIMIT 30`,
+	getStatVarsByConstraints: `
+SELECT
+  e.subject_id AS sv_dcid,
+  IFNULL(n.name, '') AS sv_name,
+  e.object_id AS prop,
+  v.object_id AS val
+FROM Edge e
+LEFT JOIN Edge v
+  ON e.subject_id = v.subject_id
+  AND e.object_id = v.predicate
+LEFT JOIN Node n
+  ON e.subject_id = n.subject_id
+WHERE e.subject_id >= @start_key
+  AND e.subject_id < @end_key
+  AND e.subject_id LIKE @like_pattern
+  AND e.predicate = 'constraintProperties'
+LIMIT 5000`,
 }

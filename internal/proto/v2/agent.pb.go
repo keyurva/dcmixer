@@ -267,8 +267,10 @@ type SearchIndicatorsResponse struct {
 	TopicCandidates *Table `protobuf:"bytes,7,opt,name=topic_candidates,json=topicCandidates,proto3" json:"topic_candidates,omitempty"`
 	// Variables Table (columns: ["dcid", "name", "placesWithData", "observationProperties"])
 	VariableCandidates *Table `protobuf:"bytes,8,opt,name=variable_candidates,json=variableCandidates,proto3" json:"variable_candidates,omitempty"`
-	unknownFields      protoimpl.UnknownFields
-	sizeCache          protoimpl.SizeCache
+	// Constraint Values Table (columns: ["seed_dcid", "property", "value_dcid", "value_name"])
+	ConstraintValues *Table `protobuf:"bytes,9,opt,name=constraint_values,json=constraintValues,proto3" json:"constraint_values,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *SearchIndicatorsResponse) Reset() {
@@ -358,6 +360,13 @@ func (x *SearchIndicatorsResponse) GetTopicCandidates() *Table {
 func (x *SearchIndicatorsResponse) GetVariableCandidates() *Table {
 	if x != nil {
 		return x.VariableCandidates
+	}
+	return nil
+}
+
+func (x *SearchIndicatorsResponse) GetConstraintValues() *Table {
+	if x != nil {
+		return x.ConstraintValues
 	}
 	return nil
 }
@@ -911,6 +920,121 @@ func (x *InspectIndicatorNodesResponse) GetStatVars() []*InspectIndicatorNodesRe
 	return nil
 }
 
+// Request payload for the get_stat_vars_by_constraints tool endpoint.
+type GetStatVarsByConstraintsRequest struct {
+	state         protoimpl.MessageState                                          `protogen:"open.v1"`
+	SeedDcid      string                                                          `protobuf:"bytes,1,opt,name=seed_dcid,json=seedDcid,proto3" json:"seed_dcid,omitempty"`
+	Constraints   map[string]*GetStatVarsByConstraintsRequest_ConstraintValueList `protobuf:"bytes,2,rep,name=constraints,proto3" json:"constraints,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	PlaceDcids    []string                                                        `protobuf:"bytes,3,rep,name=place_dcids,json=placeDcids,proto3" json:"place_dcids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStatVarsByConstraintsRequest) Reset() {
+	*x = GetStatVarsByConstraintsRequest{}
+	mi := &file_v2_agent_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStatVarsByConstraintsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStatVarsByConstraintsRequest) ProtoMessage() {}
+
+func (x *GetStatVarsByConstraintsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v2_agent_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStatVarsByConstraintsRequest.ProtoReflect.Descriptor instead.
+func (*GetStatVarsByConstraintsRequest) Descriptor() ([]byte, []int) {
+	return file_v2_agent_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *GetStatVarsByConstraintsRequest) GetSeedDcid() string {
+	if x != nil {
+		return x.SeedDcid
+	}
+	return ""
+}
+
+func (x *GetStatVarsByConstraintsRequest) GetConstraints() map[string]*GetStatVarsByConstraintsRequest_ConstraintValueList {
+	if x != nil {
+		return x.Constraints
+	}
+	return nil
+}
+
+func (x *GetStatVarsByConstraintsRequest) GetPlaceDcids() []string {
+	if x != nil {
+		return x.PlaceDcids
+	}
+	return nil
+}
+
+// Response payload for the get_stat_vars_by_constraints tool endpoint.
+type GetStatVarsByConstraintsResponse struct {
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	SeedDcid string                 `protobuf:"bytes,1,opt,name=seed_dcid,json=seedDcid,proto3" json:"seed_dcid,omitempty"`
+	// Tabular matched StatVars (columns: ["dcid", "name", "match_type", <constraint_prop_1>, ...])
+	StatVars      *Table `protobuf:"bytes,2,opt,name=stat_vars,json=statVars,proto3" json:"stat_vars,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStatVarsByConstraintsResponse) Reset() {
+	*x = GetStatVarsByConstraintsResponse{}
+	mi := &file_v2_agent_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStatVarsByConstraintsResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStatVarsByConstraintsResponse) ProtoMessage() {}
+
+func (x *GetStatVarsByConstraintsResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v2_agent_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStatVarsByConstraintsResponse.ProtoReflect.Descriptor instead.
+func (*GetStatVarsByConstraintsResponse) Descriptor() ([]byte, []int) {
+	return file_v2_agent_proto_rawDescGZIP(), []int{13}
+}
+
+func (x *GetStatVarsByConstraintsResponse) GetSeedDcid() string {
+	if x != nil {
+		return x.SeedDcid
+	}
+	return ""
+}
+
+func (x *GetStatVarsByConstraintsResponse) GetStatVars() *Table {
+	if x != nil {
+		return x.StatVars
+	}
+	return nil
+}
+
 type SearchIndicatorsResponse_Topic struct {
 	state                 protoimpl.MessageState `protogen:"open.v1"`
 	Dcid                  string                 `protobuf:"bytes,1,opt,name=dcid,proto3" json:"dcid,omitempty"`
@@ -925,7 +1049,7 @@ type SearchIndicatorsResponse_Topic struct {
 
 func (x *SearchIndicatorsResponse_Topic) Reset() {
 	*x = SearchIndicatorsResponse_Topic{}
-	mi := &file_v2_agent_proto_msgTypes[12]
+	mi := &file_v2_agent_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -937,7 +1061,7 @@ func (x *SearchIndicatorsResponse_Topic) String() string {
 func (*SearchIndicatorsResponse_Topic) ProtoMessage() {}
 
 func (x *SearchIndicatorsResponse_Topic) ProtoReflect() protoreflect.Message {
-	mi := &file_v2_agent_proto_msgTypes[12]
+	mi := &file_v2_agent_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1008,7 +1132,7 @@ type SearchIndicatorsResponse_Variable struct {
 
 func (x *SearchIndicatorsResponse_Variable) Reset() {
 	*x = SearchIndicatorsResponse_Variable{}
-	mi := &file_v2_agent_proto_msgTypes[13]
+	mi := &file_v2_agent_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1020,7 +1144,7 @@ func (x *SearchIndicatorsResponse_Variable) String() string {
 func (*SearchIndicatorsResponse_Variable) ProtoMessage() {}
 
 func (x *SearchIndicatorsResponse_Variable) ProtoReflect() protoreflect.Message {
-	mi := &file_v2_agent_proto_msgTypes[13]
+	mi := &file_v2_agent_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1082,7 +1206,7 @@ type SearchIndicatorsResponse_ResolvedPlace struct {
 
 func (x *SearchIndicatorsResponse_ResolvedPlace) Reset() {
 	*x = SearchIndicatorsResponse_ResolvedPlace{}
-	mi := &file_v2_agent_proto_msgTypes[14]
+	mi := &file_v2_agent_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1094,7 +1218,7 @@ func (x *SearchIndicatorsResponse_ResolvedPlace) String() string {
 func (*SearchIndicatorsResponse_ResolvedPlace) ProtoMessage() {}
 
 func (x *SearchIndicatorsResponse_ResolvedPlace) ProtoReflect() protoreflect.Message {
-	mi := &file_v2_agent_proto_msgTypes[14]
+	mi := &file_v2_agent_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1142,7 +1266,7 @@ type GetObservationsResponse_Node struct {
 
 func (x *GetObservationsResponse_Node) Reset() {
 	*x = GetObservationsResponse_Node{}
-	mi := &file_v2_agent_proto_msgTypes[18]
+	mi := &file_v2_agent_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1154,7 +1278,7 @@ func (x *GetObservationsResponse_Node) String() string {
 func (*GetObservationsResponse_Node) ProtoMessage() {}
 
 func (x *GetObservationsResponse_Node) ProtoReflect() protoreflect.Message {
-	mi := &file_v2_agent_proto_msgTypes[18]
+	mi := &file_v2_agent_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1205,7 +1329,7 @@ type GetObservationsResponse_FacetMetadata struct {
 
 func (x *GetObservationsResponse_FacetMetadata) Reset() {
 	*x = GetObservationsResponse_FacetMetadata{}
-	mi := &file_v2_agent_proto_msgTypes[19]
+	mi := &file_v2_agent_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1217,7 +1341,7 @@ func (x *GetObservationsResponse_FacetMetadata) String() string {
 func (*GetObservationsResponse_FacetMetadata) ProtoMessage() {}
 
 func (x *GetObservationsResponse_FacetMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_v2_agent_proto_msgTypes[19]
+	mi := &file_v2_agent_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1285,7 +1409,7 @@ type GetObservationsResponse_AlternativeSource struct {
 
 func (x *GetObservationsResponse_AlternativeSource) Reset() {
 	*x = GetObservationsResponse_AlternativeSource{}
-	mi := &file_v2_agent_proto_msgTypes[20]
+	mi := &file_v2_agent_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1297,7 +1421,7 @@ func (x *GetObservationsResponse_AlternativeSource) String() string {
 func (*GetObservationsResponse_AlternativeSource) ProtoMessage() {}
 
 func (x *GetObservationsResponse_AlternativeSource) ProtoReflect() protoreflect.Message {
-	mi := &file_v2_agent_proto_msgTypes[20]
+	mi := &file_v2_agent_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1337,7 +1461,7 @@ type GetObservationsResponse_TimeSeriesPoint struct {
 
 func (x *GetObservationsResponse_TimeSeriesPoint) Reset() {
 	*x = GetObservationsResponse_TimeSeriesPoint{}
-	mi := &file_v2_agent_proto_msgTypes[21]
+	mi := &file_v2_agent_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1349,7 +1473,7 @@ func (x *GetObservationsResponse_TimeSeriesPoint) String() string {
 func (*GetObservationsResponse_TimeSeriesPoint) ProtoMessage() {}
 
 func (x *GetObservationsResponse_TimeSeriesPoint) ProtoReflect() protoreflect.Message {
-	mi := &file_v2_agent_proto_msgTypes[21]
+	mi := &file_v2_agent_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1390,7 +1514,7 @@ type GetObservationsResponse_PlaceObservation struct {
 
 func (x *GetObservationsResponse_PlaceObservation) Reset() {
 	*x = GetObservationsResponse_PlaceObservation{}
-	mi := &file_v2_agent_proto_msgTypes[22]
+	mi := &file_v2_agent_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1402,7 +1526,7 @@ func (x *GetObservationsResponse_PlaceObservation) String() string {
 func (*GetObservationsResponse_PlaceObservation) ProtoMessage() {}
 
 func (x *GetObservationsResponse_PlaceObservation) ProtoReflect() protoreflect.Message {
-	mi := &file_v2_agent_proto_msgTypes[22]
+	mi := &file_v2_agent_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1447,7 +1571,7 @@ type GetVariableMetadataResponse_FacetMetadata struct {
 
 func (x *GetVariableMetadataResponse_FacetMetadata) Reset() {
 	*x = GetVariableMetadataResponse_FacetMetadata{}
-	mi := &file_v2_agent_proto_msgTypes[23]
+	mi := &file_v2_agent_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1459,7 +1583,7 @@ func (x *GetVariableMetadataResponse_FacetMetadata) String() string {
 func (*GetVariableMetadataResponse_FacetMetadata) ProtoMessage() {}
 
 func (x *GetVariableMetadataResponse_FacetMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_v2_agent_proto_msgTypes[23]
+	mi := &file_v2_agent_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1530,7 +1654,7 @@ type GetVariableMetadataResponse_VariableMetadata struct {
 
 func (x *GetVariableMetadataResponse_VariableMetadata) Reset() {
 	*x = GetVariableMetadataResponse_VariableMetadata{}
-	mi := &file_v2_agent_proto_msgTypes[24]
+	mi := &file_v2_agent_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1542,7 +1666,7 @@ func (x *GetVariableMetadataResponse_VariableMetadata) String() string {
 func (*GetVariableMetadataResponse_VariableMetadata) ProtoMessage() {}
 
 func (x *GetVariableMetadataResponse_VariableMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_v2_agent_proto_msgTypes[24]
+	mi := &file_v2_agent_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1603,7 +1727,7 @@ type GetVariableMetadataResponse_ProvenanceMetadata struct {
 
 func (x *GetVariableMetadataResponse_ProvenanceMetadata) Reset() {
 	*x = GetVariableMetadataResponse_ProvenanceMetadata{}
-	mi := &file_v2_agent_proto_msgTypes[25]
+	mi := &file_v2_agent_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1615,7 +1739,7 @@ func (x *GetVariableMetadataResponse_ProvenanceMetadata) String() string {
 func (*GetVariableMetadataResponse_ProvenanceMetadata) ProtoMessage() {}
 
 func (x *GetVariableMetadataResponse_ProvenanceMetadata) ProtoReflect() protoreflect.Message {
-	mi := &file_v2_agent_proto_msgTypes[25]
+	mi := &file_v2_agent_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1655,7 +1779,7 @@ type GetVariableMetadataResponse_FacetMetadata_DateRange struct {
 
 func (x *GetVariableMetadataResponse_FacetMetadata_DateRange) Reset() {
 	*x = GetVariableMetadataResponse_FacetMetadata_DateRange{}
-	mi := &file_v2_agent_proto_msgTypes[28]
+	mi := &file_v2_agent_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1667,7 +1791,7 @@ func (x *GetVariableMetadataResponse_FacetMetadata_DateRange) String() string {
 func (*GetVariableMetadataResponse_FacetMetadata_DateRange) ProtoMessage() {}
 
 func (x *GetVariableMetadataResponse_FacetMetadata_DateRange) ProtoReflect() protoreflect.Message {
-	mi := &file_v2_agent_proto_msgTypes[28]
+	mi := &file_v2_agent_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1707,7 +1831,7 @@ type GetVariableMetadataResponse_FacetMetadata_Scope struct {
 
 func (x *GetVariableMetadataResponse_FacetMetadata_Scope) Reset() {
 	*x = GetVariableMetadataResponse_FacetMetadata_Scope{}
-	mi := &file_v2_agent_proto_msgTypes[29]
+	mi := &file_v2_agent_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1719,7 +1843,7 @@ func (x *GetVariableMetadataResponse_FacetMetadata_Scope) String() string {
 func (*GetVariableMetadataResponse_FacetMetadata_Scope) ProtoMessage() {}
 
 func (x *GetVariableMetadataResponse_FacetMetadata_Scope) ProtoReflect() protoreflect.Message {
-	mi := &file_v2_agent_proto_msgTypes[29]
+	mi := &file_v2_agent_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1750,17 +1874,18 @@ func (x *GetVariableMetadataResponse_FacetMetadata_Scope) GetEntityGranularity()
 }
 
 type InspectIndicatorNodesResponse_DimensionSliceSummary struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	Dimension      string                 `protobuf:"bytes,1,opt,name=dimension,proto3" json:"dimension,omitempty"`
-	AvailableCount int32                  `protobuf:"varint,2,opt,name=available_count,json=availableCount,proto3" json:"available_count,omitempty"`
-	SampleSlices   []string               `protobuf:"bytes,3,rep,name=sample_slices,json=sampleSlices,proto3" json:"sample_slices,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	Dimension        string                 `protobuf:"bytes,1,opt,name=dimension,proto3" json:"dimension,omitempty"`
+	AvailableCount   int32                  `protobuf:"varint,2,opt,name=available_count,json=availableCount,proto3" json:"available_count,omitempty"`
+	SampleSlices     []string               `protobuf:"bytes,3,rep,name=sample_slices,json=sampleSlices,proto3" json:"sample_slices,omitempty"`
+	ConstraintValues []string               `protobuf:"bytes,4,rep,name=constraint_values,json=constraintValues,proto3" json:"constraint_values,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *InspectIndicatorNodesResponse_DimensionSliceSummary) Reset() {
 	*x = InspectIndicatorNodesResponse_DimensionSliceSummary{}
-	mi := &file_v2_agent_proto_msgTypes[30]
+	mi := &file_v2_agent_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1772,7 +1897,7 @@ func (x *InspectIndicatorNodesResponse_DimensionSliceSummary) String() string {
 func (*InspectIndicatorNodesResponse_DimensionSliceSummary) ProtoMessage() {}
 
 func (x *InspectIndicatorNodesResponse_DimensionSliceSummary) ProtoReflect() protoreflect.Message {
-	mi := &file_v2_agent_proto_msgTypes[30]
+	mi := &file_v2_agent_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1809,6 +1934,13 @@ func (x *InspectIndicatorNodesResponse_DimensionSliceSummary) GetSampleSlices() 
 	return nil
 }
 
+func (x *InspectIndicatorNodesResponse_DimensionSliceSummary) GetConstraintValues() []string {
+	if x != nil {
+		return x.ConstraintValues
+	}
+	return nil
+}
+
 type InspectIndicatorNodesResponse_StatVarInspection struct {
 	state         protoimpl.MessageState                                 `protogen:"open.v1"`
 	SeedDcid      string                                                 `protobuf:"bytes,1,opt,name=seed_dcid,json=seedDcid,proto3" json:"seed_dcid,omitempty"`
@@ -1824,7 +1956,7 @@ type InspectIndicatorNodesResponse_StatVarInspection struct {
 
 func (x *InspectIndicatorNodesResponse_StatVarInspection) Reset() {
 	*x = InspectIndicatorNodesResponse_StatVarInspection{}
-	mi := &file_v2_agent_proto_msgTypes[31]
+	mi := &file_v2_agent_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1836,7 +1968,7 @@ func (x *InspectIndicatorNodesResponse_StatVarInspection) String() string {
 func (*InspectIndicatorNodesResponse_StatVarInspection) ProtoMessage() {}
 
 func (x *InspectIndicatorNodesResponse_StatVarInspection) ProtoReflect() protoreflect.Message {
-	mi := &file_v2_agent_proto_msgTypes[31]
+	mi := &file_v2_agent_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1912,7 +2044,7 @@ type InspectIndicatorNodesResponse_TopicInspection struct {
 
 func (x *InspectIndicatorNodesResponse_TopicInspection) Reset() {
 	*x = InspectIndicatorNodesResponse_TopicInspection{}
-	mi := &file_v2_agent_proto_msgTypes[32]
+	mi := &file_v2_agent_proto_msgTypes[34]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1924,7 +2056,7 @@ func (x *InspectIndicatorNodesResponse_TopicInspection) String() string {
 func (*InspectIndicatorNodesResponse_TopicInspection) ProtoMessage() {}
 
 func (x *InspectIndicatorNodesResponse_TopicInspection) ProtoReflect() protoreflect.Message {
-	mi := &file_v2_agent_proto_msgTypes[32]
+	mi := &file_v2_agent_proto_msgTypes[34]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1961,6 +2093,50 @@ func (x *InspectIndicatorNodesResponse_TopicInspection) GetChildTopics() []strin
 	return nil
 }
 
+type GetStatVarsByConstraintsRequest_ConstraintValueList struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Values        []string               `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetStatVarsByConstraintsRequest_ConstraintValueList) Reset() {
+	*x = GetStatVarsByConstraintsRequest_ConstraintValueList{}
+	mi := &file_v2_agent_proto_msgTypes[35]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetStatVarsByConstraintsRequest_ConstraintValueList) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetStatVarsByConstraintsRequest_ConstraintValueList) ProtoMessage() {}
+
+func (x *GetStatVarsByConstraintsRequest_ConstraintValueList) ProtoReflect() protoreflect.Message {
+	mi := &file_v2_agent_proto_msgTypes[35]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetStatVarsByConstraintsRequest_ConstraintValueList.ProtoReflect.Descriptor instead.
+func (*GetStatVarsByConstraintsRequest_ConstraintValueList) Descriptor() ([]byte, []int) {
+	return file_v2_agent_proto_rawDescGZIP(), []int{12, 0}
+}
+
+func (x *GetStatVarsByConstraintsRequest_ConstraintValueList) GetValues() []string {
+	if x != nil {
+		return x.Values
+	}
+	return nil
+}
+
 var File_v2_agent_proto protoreflect.FileDescriptor
 
 const file_v2_agent_proto_rawDesc = "" +
@@ -1985,7 +2161,7 @@ const file_v2_agent_proto_rawDesc = "" +
 	"placeDcidsB\x11\n" +
 	"\x0f_include_topicsB\x10\n" +
 	"\x0e_expand_topicsB\t\n" +
-	"\a_target\"\x8b\v\n" +
+	"\a_target\"\xcf\v\n" +
 	"\x18SearchIndicatorsResponse\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12p\n" +
 	"\x12dcid_name_mappings\x18\x02 \x03(\v2>.datacommons.v2.SearchIndicatorsResponse.DcidNameMappingsEntryB\x02\x18\x01R\x10dcidNameMappings\x12\x80\x01\n" +
@@ -1994,7 +2170,8 @@ const file_v2_agent_proto_rawDesc = "" +
 	"\tvariables\x18\x05 \x03(\v21.datacommons.v2.SearchIndicatorsResponse.VariableB\x02\x18\x01R\tvariables\x12n\n" +
 	"\x15resolved_parent_place\x18\x06 \x01(\v26.datacommons.v2.SearchIndicatorsResponse.ResolvedPlaceB\x02\x18\x01R\x13resolvedParentPlace\x12@\n" +
 	"\x10topic_candidates\x18\a \x01(\v2\x15.datacommons.v2.TableR\x0ftopicCandidates\x12F\n" +
-	"\x13variable_candidates\x18\b \x01(\v2\x15.datacommons.v2.TableR\x12variableCandidates\x1a\xee\x01\n" +
+	"\x13variable_candidates\x18\b \x01(\v2\x15.datacommons.v2.TableR\x12variableCandidates\x12B\n" +
+	"\x11constraint_values\x18\t \x01(\v2\x15.datacommons.v2.TableR\x10constraintValues\x1a\xee\x01\n" +
 	"\x05Topic\x12\x12\n" +
 	"\x04dcid\x18\x01 \x01(\tR\x04dcid\x12#\n" +
 	"\rmember_topics\x18\x02 \x03(\tR\fmemberTopics\x12)\n" +
@@ -2120,14 +2297,15 @@ const file_v2_agent_proto_rawDesc = "" +
 	"\x1cInspectIndicatorNodesRequest\x12\x14\n" +
 	"\x05dcids\x18\x01 \x03(\tR\x05dcids\x12\x1f\n" +
 	"\vplace_dcids\x18\x02 \x03(\tR\n" +
-	"placeDcids\"\x8e\x06\n" +
+	"placeDcids\"\xbb\x06\n" +
 	"\x1dInspectIndicatorNodesResponse\x12U\n" +
 	"\x06topics\x18\x01 \x03(\v2=.datacommons.v2.InspectIndicatorNodesResponse.TopicInspectionR\x06topics\x12\\\n" +
-	"\tstat_vars\x18\x02 \x03(\v2?.datacommons.v2.InspectIndicatorNodesResponse.StatVarInspectionR\bstatVars\x1a\x83\x01\n" +
+	"\tstat_vars\x18\x02 \x03(\v2?.datacommons.v2.InspectIndicatorNodesResponse.StatVarInspectionR\bstatVars\x1a\xb0\x01\n" +
 	"\x15DimensionSliceSummary\x12\x1c\n" +
 	"\tdimension\x18\x01 \x01(\tR\tdimension\x12'\n" +
 	"\x0favailable_count\x18\x02 \x01(\x05R\x0eavailableCount\x12#\n" +
-	"\rsample_slices\x18\x03 \x03(\tR\fsampleSlices\x1a\xac\x02\n" +
+	"\rsample_slices\x18\x03 \x03(\tR\fsampleSlices\x12+\n" +
+	"\x11constraint_values\x18\x04 \x03(\tR\x10constraintValues\x1a\xac\x02\n" +
 	"\x11StatVarInspection\x12\x1b\n" +
 	"\tseed_dcid\x18\x01 \x01(\tR\bseedDcid\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -2143,7 +2321,20 @@ const file_v2_agent_proto_rawDesc = "" +
 	"\n" +
 	"topic_dcid\x18\x01 \x01(\tR\ttopicDcid\x12-\n" +
 	"\x12headline_variables\x18\x02 \x03(\tR\x11headlineVariables\x12!\n" +
-	"\fchild_topics\x18\x03 \x03(\tR\vchildTopicsB3Z1github.com/datacommonsorg/mixer/internal/proto/v2b\x06proto3"
+	"\fchild_topics\x18\x03 \x03(\tR\vchildTopics\"\xf8\x02\n" +
+	"\x1fGetStatVarsByConstraintsRequest\x12\x1b\n" +
+	"\tseed_dcid\x18\x01 \x01(\tR\bseedDcid\x12b\n" +
+	"\vconstraints\x18\x02 \x03(\v2@.datacommons.v2.GetStatVarsByConstraintsRequest.ConstraintsEntryR\vconstraints\x12\x1f\n" +
+	"\vplace_dcids\x18\x03 \x03(\tR\n" +
+	"placeDcids\x1a-\n" +
+	"\x13ConstraintValueList\x12\x16\n" +
+	"\x06values\x18\x01 \x03(\tR\x06values\x1a\x83\x01\n" +
+	"\x10ConstraintsEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12Y\n" +
+	"\x05value\x18\x02 \x01(\v2C.datacommons.v2.GetStatVarsByConstraintsRequest.ConstraintValueListR\x05value:\x028\x01\"s\n" +
+	" GetStatVarsByConstraintsResponse\x12\x1b\n" +
+	"\tseed_dcid\x18\x01 \x01(\tR\bseedDcid\x122\n" +
+	"\tstat_vars\x18\x02 \x01(\v2\x15.datacommons.v2.TableR\bstatVarsB3Z1github.com/datacommonsorg/mixer/internal/proto/v2b\x06proto3"
 
 var (
 	file_v2_agent_proto_rawDescOnce sync.Once
@@ -2157,7 +2348,7 @@ func file_v2_agent_proto_rawDescGZIP() []byte {
 	return file_v2_agent_proto_rawDescData
 }
 
-var file_v2_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 33)
+var file_v2_agent_proto_msgTypes = make([]protoimpl.MessageInfo, 37)
 var file_v2_agent_proto_goTypes = []any{
 	(*ResolvePlacesRequest)(nil),                   // 0: datacommons.v2.ResolvePlacesRequest
 	(*ResolvePlacesResponse)(nil),                  // 1: datacommons.v2.ResolvePlacesResponse
@@ -2171,72 +2362,80 @@ var file_v2_agent_proto_goTypes = []any{
 	(*GetVariableMetadataResponse)(nil),            // 9: datacommons.v2.GetVariableMetadataResponse
 	(*InspectIndicatorNodesRequest)(nil),           // 10: datacommons.v2.InspectIndicatorNodesRequest
 	(*InspectIndicatorNodesResponse)(nil),          // 11: datacommons.v2.InspectIndicatorNodesResponse
-	(*SearchIndicatorsResponse_Topic)(nil),         // 12: datacommons.v2.SearchIndicatorsResponse.Topic
-	(*SearchIndicatorsResponse_Variable)(nil),      // 13: datacommons.v2.SearchIndicatorsResponse.Variable
-	(*SearchIndicatorsResponse_ResolvedPlace)(nil), // 14: datacommons.v2.SearchIndicatorsResponse.ResolvedPlace
-	nil,                                  // 15: datacommons.v2.SearchIndicatorsResponse.DcidNameMappingsEntry
-	nil,                                  // 16: datacommons.v2.SearchIndicatorsResponse.DcidPlaceTypeMappingsEntry
-	nil,                                  // 17: datacommons.v2.GetObservationsRequest.EntitiesEntry
-	(*GetObservationsResponse_Node)(nil), // 18: datacommons.v2.GetObservationsResponse.Node
-	(*GetObservationsResponse_FacetMetadata)(nil),          // 19: datacommons.v2.GetObservationsResponse.FacetMetadata
-	(*GetObservationsResponse_AlternativeSource)(nil),      // 20: datacommons.v2.GetObservationsResponse.AlternativeSource
-	(*GetObservationsResponse_TimeSeriesPoint)(nil),        // 21: datacommons.v2.GetObservationsResponse.TimeSeriesPoint
-	(*GetObservationsResponse_PlaceObservation)(nil),       // 22: datacommons.v2.GetObservationsResponse.PlaceObservation
-	(*GetVariableMetadataResponse_FacetMetadata)(nil),      // 23: datacommons.v2.GetVariableMetadataResponse.FacetMetadata
-	(*GetVariableMetadataResponse_VariableMetadata)(nil),   // 24: datacommons.v2.GetVariableMetadataResponse.VariableMetadata
-	(*GetVariableMetadataResponse_ProvenanceMetadata)(nil), // 25: datacommons.v2.GetVariableMetadataResponse.ProvenanceMetadata
-	nil, // 26: datacommons.v2.GetVariableMetadataResponse.VariablesEntry
-	nil, // 27: datacommons.v2.GetVariableMetadataResponse.ProvenancesEntry
-	(*GetVariableMetadataResponse_FacetMetadata_DateRange)(nil), // 28: datacommons.v2.GetVariableMetadataResponse.FacetMetadata.DateRange
-	(*GetVariableMetadataResponse_FacetMetadata_Scope)(nil),     // 29: datacommons.v2.GetVariableMetadataResponse.FacetMetadata.Scope
-	(*InspectIndicatorNodesResponse_DimensionSliceSummary)(nil), // 30: datacommons.v2.InspectIndicatorNodesResponse.DimensionSliceSummary
-	(*InspectIndicatorNodesResponse_StatVarInspection)(nil),     // 31: datacommons.v2.InspectIndicatorNodesResponse.StatVarInspection
-	(*InspectIndicatorNodesResponse_TopicInspection)(nil),       // 32: datacommons.v2.InspectIndicatorNodesResponse.TopicInspection
-	(*structpb.ListValue)(nil),                                  // 33: google.protobuf.ListValue
-	(*structpb.Value)(nil),                                      // 34: google.protobuf.Value
-	(*structpb.Struct)(nil),                                     // 35: google.protobuf.Struct
+	(*GetStatVarsByConstraintsRequest)(nil),        // 12: datacommons.v2.GetStatVarsByConstraintsRequest
+	(*GetStatVarsByConstraintsResponse)(nil),       // 13: datacommons.v2.GetStatVarsByConstraintsResponse
+	(*SearchIndicatorsResponse_Topic)(nil),         // 14: datacommons.v2.SearchIndicatorsResponse.Topic
+	(*SearchIndicatorsResponse_Variable)(nil),      // 15: datacommons.v2.SearchIndicatorsResponse.Variable
+	(*SearchIndicatorsResponse_ResolvedPlace)(nil), // 16: datacommons.v2.SearchIndicatorsResponse.ResolvedPlace
+	nil,                                  // 17: datacommons.v2.SearchIndicatorsResponse.DcidNameMappingsEntry
+	nil,                                  // 18: datacommons.v2.SearchIndicatorsResponse.DcidPlaceTypeMappingsEntry
+	nil,                                  // 19: datacommons.v2.GetObservationsRequest.EntitiesEntry
+	(*GetObservationsResponse_Node)(nil), // 20: datacommons.v2.GetObservationsResponse.Node
+	(*GetObservationsResponse_FacetMetadata)(nil),          // 21: datacommons.v2.GetObservationsResponse.FacetMetadata
+	(*GetObservationsResponse_AlternativeSource)(nil),      // 22: datacommons.v2.GetObservationsResponse.AlternativeSource
+	(*GetObservationsResponse_TimeSeriesPoint)(nil),        // 23: datacommons.v2.GetObservationsResponse.TimeSeriesPoint
+	(*GetObservationsResponse_PlaceObservation)(nil),       // 24: datacommons.v2.GetObservationsResponse.PlaceObservation
+	(*GetVariableMetadataResponse_FacetMetadata)(nil),      // 25: datacommons.v2.GetVariableMetadataResponse.FacetMetadata
+	(*GetVariableMetadataResponse_VariableMetadata)(nil),   // 26: datacommons.v2.GetVariableMetadataResponse.VariableMetadata
+	(*GetVariableMetadataResponse_ProvenanceMetadata)(nil), // 27: datacommons.v2.GetVariableMetadataResponse.ProvenanceMetadata
+	nil, // 28: datacommons.v2.GetVariableMetadataResponse.VariablesEntry
+	nil, // 29: datacommons.v2.GetVariableMetadataResponse.ProvenancesEntry
+	(*GetVariableMetadataResponse_FacetMetadata_DateRange)(nil), // 30: datacommons.v2.GetVariableMetadataResponse.FacetMetadata.DateRange
+	(*GetVariableMetadataResponse_FacetMetadata_Scope)(nil),     // 31: datacommons.v2.GetVariableMetadataResponse.FacetMetadata.Scope
+	(*InspectIndicatorNodesResponse_DimensionSliceSummary)(nil), // 32: datacommons.v2.InspectIndicatorNodesResponse.DimensionSliceSummary
+	(*InspectIndicatorNodesResponse_StatVarInspection)(nil),     // 33: datacommons.v2.InspectIndicatorNodesResponse.StatVarInspection
+	(*InspectIndicatorNodesResponse_TopicInspection)(nil),       // 34: datacommons.v2.InspectIndicatorNodesResponse.TopicInspection
+	(*GetStatVarsByConstraintsRequest_ConstraintValueList)(nil), // 35: datacommons.v2.GetStatVarsByConstraintsRequest.ConstraintValueList
+	nil,                        // 36: datacommons.v2.GetStatVarsByConstraintsRequest.ConstraintsEntry
+	(*structpb.ListValue)(nil), // 37: google.protobuf.ListValue
+	(*structpb.Value)(nil),     // 38: google.protobuf.Value
+	(*structpb.Struct)(nil),    // 39: google.protobuf.Struct
 }
 var file_v2_agent_proto_depIdxs = []int32{
 	5,  // 0: datacommons.v2.ResolvePlacesResponse.resolved_places:type_name -> datacommons.v2.Table
-	15, // 1: datacommons.v2.SearchIndicatorsResponse.dcid_name_mappings:type_name -> datacommons.v2.SearchIndicatorsResponse.DcidNameMappingsEntry
-	16, // 2: datacommons.v2.SearchIndicatorsResponse.dcid_place_type_mappings:type_name -> datacommons.v2.SearchIndicatorsResponse.DcidPlaceTypeMappingsEntry
-	12, // 3: datacommons.v2.SearchIndicatorsResponse.topics:type_name -> datacommons.v2.SearchIndicatorsResponse.Topic
-	13, // 4: datacommons.v2.SearchIndicatorsResponse.variables:type_name -> datacommons.v2.SearchIndicatorsResponse.Variable
-	14, // 5: datacommons.v2.SearchIndicatorsResponse.resolved_parent_place:type_name -> datacommons.v2.SearchIndicatorsResponse.ResolvedPlace
+	17, // 1: datacommons.v2.SearchIndicatorsResponse.dcid_name_mappings:type_name -> datacommons.v2.SearchIndicatorsResponse.DcidNameMappingsEntry
+	18, // 2: datacommons.v2.SearchIndicatorsResponse.dcid_place_type_mappings:type_name -> datacommons.v2.SearchIndicatorsResponse.DcidPlaceTypeMappingsEntry
+	14, // 3: datacommons.v2.SearchIndicatorsResponse.topics:type_name -> datacommons.v2.SearchIndicatorsResponse.Topic
+	15, // 4: datacommons.v2.SearchIndicatorsResponse.variables:type_name -> datacommons.v2.SearchIndicatorsResponse.Variable
+	16, // 5: datacommons.v2.SearchIndicatorsResponse.resolved_parent_place:type_name -> datacommons.v2.SearchIndicatorsResponse.ResolvedPlace
 	5,  // 6: datacommons.v2.SearchIndicatorsResponse.topic_candidates:type_name -> datacommons.v2.Table
 	5,  // 7: datacommons.v2.SearchIndicatorsResponse.variable_candidates:type_name -> datacommons.v2.Table
-	33, // 8: datacommons.v2.Table.rows:type_name -> google.protobuf.ListValue
-	17, // 9: datacommons.v2.GetObservationsRequest.entities:type_name -> datacommons.v2.GetObservationsRequest.EntitiesEntry
-	18, // 10: datacommons.v2.GetObservationsResponse.variable:type_name -> datacommons.v2.GetObservationsResponse.Node
-	18, // 11: datacommons.v2.GetObservationsResponse.resolved_parent_place:type_name -> datacommons.v2.GetObservationsResponse.Node
-	5,  // 12: datacommons.v2.GetObservationsResponse.entity_metadata:type_name -> datacommons.v2.Table
-	5,  // 13: datacommons.v2.GetObservationsResponse.data:type_name -> datacommons.v2.Table
-	22, // 14: datacommons.v2.GetObservationsResponse.place_observations:type_name -> datacommons.v2.GetObservationsResponse.PlaceObservation
-	19, // 15: datacommons.v2.GetObservationsResponse.source_metadata:type_name -> datacommons.v2.GetObservationsResponse.FacetMetadata
-	20, // 16: datacommons.v2.GetObservationsResponse.alternative_sources:type_name -> datacommons.v2.GetObservationsResponse.AlternativeSource
-	26, // 17: datacommons.v2.GetVariableMetadataResponse.variables:type_name -> datacommons.v2.GetVariableMetadataResponse.VariablesEntry
-	27, // 18: datacommons.v2.GetVariableMetadataResponse.provenances:type_name -> datacommons.v2.GetVariableMetadataResponse.ProvenancesEntry
-	32, // 19: datacommons.v2.InspectIndicatorNodesResponse.topics:type_name -> datacommons.v2.InspectIndicatorNodesResponse.TopicInspection
-	31, // 20: datacommons.v2.InspectIndicatorNodesResponse.stat_vars:type_name -> datacommons.v2.InspectIndicatorNodesResponse.StatVarInspection
-	33, // 21: datacommons.v2.SearchIndicatorsResponse.DcidPlaceTypeMappingsEntry.value:type_name -> google.protobuf.ListValue
-	34, // 22: datacommons.v2.GetObservationsRequest.EntitiesEntry.value:type_name -> google.protobuf.Value
-	19, // 23: datacommons.v2.GetObservationsResponse.AlternativeSource.source_metadata:type_name -> datacommons.v2.GetObservationsResponse.FacetMetadata
-	18, // 24: datacommons.v2.GetObservationsResponse.PlaceObservation.place:type_name -> datacommons.v2.GetObservationsResponse.Node
-	21, // 25: datacommons.v2.GetObservationsResponse.PlaceObservation.time_series:type_name -> datacommons.v2.GetObservationsResponse.TimeSeriesPoint
-	28, // 26: datacommons.v2.GetVariableMetadataResponse.FacetMetadata.date_range:type_name -> datacommons.v2.GetVariableMetadataResponse.FacetMetadata.DateRange
-	29, // 27: datacommons.v2.GetVariableMetadataResponse.FacetMetadata.scope:type_name -> datacommons.v2.GetVariableMetadataResponse.FacetMetadata.Scope
-	35, // 28: datacommons.v2.GetVariableMetadataResponse.FacetMetadata.properties:type_name -> google.protobuf.Struct
-	35, // 29: datacommons.v2.GetVariableMetadataResponse.VariableMetadata.properties:type_name -> google.protobuf.Struct
-	23, // 30: datacommons.v2.GetVariableMetadataResponse.VariableMetadata.facets:type_name -> datacommons.v2.GetVariableMetadataResponse.FacetMetadata
-	35, // 31: datacommons.v2.GetVariableMetadataResponse.ProvenanceMetadata.properties:type_name -> google.protobuf.Struct
-	24, // 32: datacommons.v2.GetVariableMetadataResponse.VariablesEntry.value:type_name -> datacommons.v2.GetVariableMetadataResponse.VariableMetadata
-	25, // 33: datacommons.v2.GetVariableMetadataResponse.ProvenancesEntry.value:type_name -> datacommons.v2.GetVariableMetadataResponse.ProvenanceMetadata
-	30, // 34: datacommons.v2.InspectIndicatorNodesResponse.StatVarInspection.dimensions:type_name -> datacommons.v2.InspectIndicatorNodesResponse.DimensionSliceSummary
-	35, // [35:35] is the sub-list for method output_type
-	35, // [35:35] is the sub-list for method input_type
-	35, // [35:35] is the sub-list for extension type_name
-	35, // [35:35] is the sub-list for extension extendee
-	0,  // [0:35] is the sub-list for field type_name
+	5,  // 8: datacommons.v2.SearchIndicatorsResponse.constraint_values:type_name -> datacommons.v2.Table
+	37, // 9: datacommons.v2.Table.rows:type_name -> google.protobuf.ListValue
+	19, // 10: datacommons.v2.GetObservationsRequest.entities:type_name -> datacommons.v2.GetObservationsRequest.EntitiesEntry
+	20, // 11: datacommons.v2.GetObservationsResponse.variable:type_name -> datacommons.v2.GetObservationsResponse.Node
+	20, // 12: datacommons.v2.GetObservationsResponse.resolved_parent_place:type_name -> datacommons.v2.GetObservationsResponse.Node
+	5,  // 13: datacommons.v2.GetObservationsResponse.entity_metadata:type_name -> datacommons.v2.Table
+	5,  // 14: datacommons.v2.GetObservationsResponse.data:type_name -> datacommons.v2.Table
+	24, // 15: datacommons.v2.GetObservationsResponse.place_observations:type_name -> datacommons.v2.GetObservationsResponse.PlaceObservation
+	21, // 16: datacommons.v2.GetObservationsResponse.source_metadata:type_name -> datacommons.v2.GetObservationsResponse.FacetMetadata
+	22, // 17: datacommons.v2.GetObservationsResponse.alternative_sources:type_name -> datacommons.v2.GetObservationsResponse.AlternativeSource
+	28, // 18: datacommons.v2.GetVariableMetadataResponse.variables:type_name -> datacommons.v2.GetVariableMetadataResponse.VariablesEntry
+	29, // 19: datacommons.v2.GetVariableMetadataResponse.provenances:type_name -> datacommons.v2.GetVariableMetadataResponse.ProvenancesEntry
+	34, // 20: datacommons.v2.InspectIndicatorNodesResponse.topics:type_name -> datacommons.v2.InspectIndicatorNodesResponse.TopicInspection
+	33, // 21: datacommons.v2.InspectIndicatorNodesResponse.stat_vars:type_name -> datacommons.v2.InspectIndicatorNodesResponse.StatVarInspection
+	36, // 22: datacommons.v2.GetStatVarsByConstraintsRequest.constraints:type_name -> datacommons.v2.GetStatVarsByConstraintsRequest.ConstraintsEntry
+	5,  // 23: datacommons.v2.GetStatVarsByConstraintsResponse.stat_vars:type_name -> datacommons.v2.Table
+	37, // 24: datacommons.v2.SearchIndicatorsResponse.DcidPlaceTypeMappingsEntry.value:type_name -> google.protobuf.ListValue
+	38, // 25: datacommons.v2.GetObservationsRequest.EntitiesEntry.value:type_name -> google.protobuf.Value
+	21, // 26: datacommons.v2.GetObservationsResponse.AlternativeSource.source_metadata:type_name -> datacommons.v2.GetObservationsResponse.FacetMetadata
+	20, // 27: datacommons.v2.GetObservationsResponse.PlaceObservation.place:type_name -> datacommons.v2.GetObservationsResponse.Node
+	23, // 28: datacommons.v2.GetObservationsResponse.PlaceObservation.time_series:type_name -> datacommons.v2.GetObservationsResponse.TimeSeriesPoint
+	30, // 29: datacommons.v2.GetVariableMetadataResponse.FacetMetadata.date_range:type_name -> datacommons.v2.GetVariableMetadataResponse.FacetMetadata.DateRange
+	31, // 30: datacommons.v2.GetVariableMetadataResponse.FacetMetadata.scope:type_name -> datacommons.v2.GetVariableMetadataResponse.FacetMetadata.Scope
+	39, // 31: datacommons.v2.GetVariableMetadataResponse.FacetMetadata.properties:type_name -> google.protobuf.Struct
+	39, // 32: datacommons.v2.GetVariableMetadataResponse.VariableMetadata.properties:type_name -> google.protobuf.Struct
+	25, // 33: datacommons.v2.GetVariableMetadataResponse.VariableMetadata.facets:type_name -> datacommons.v2.GetVariableMetadataResponse.FacetMetadata
+	39, // 34: datacommons.v2.GetVariableMetadataResponse.ProvenanceMetadata.properties:type_name -> google.protobuf.Struct
+	26, // 35: datacommons.v2.GetVariableMetadataResponse.VariablesEntry.value:type_name -> datacommons.v2.GetVariableMetadataResponse.VariableMetadata
+	27, // 36: datacommons.v2.GetVariableMetadataResponse.ProvenancesEntry.value:type_name -> datacommons.v2.GetVariableMetadataResponse.ProvenanceMetadata
+	32, // 37: datacommons.v2.InspectIndicatorNodesResponse.StatVarInspection.dimensions:type_name -> datacommons.v2.InspectIndicatorNodesResponse.DimensionSliceSummary
+	35, // 38: datacommons.v2.GetStatVarsByConstraintsRequest.ConstraintsEntry.value:type_name -> datacommons.v2.GetStatVarsByConstraintsRequest.ConstraintValueList
+	39, // [39:39] is the sub-list for method output_type
+	39, // [39:39] is the sub-list for method input_type
+	39, // [39:39] is the sub-list for extension type_name
+	39, // [39:39] is the sub-list for extension extendee
+	0,  // [0:39] is the sub-list for field type_name
 }
 
 func init() { file_v2_agent_proto_init() }
@@ -2247,14 +2446,14 @@ func file_v2_agent_proto_init() {
 	file_v2_agent_proto_msgTypes[0].OneofWrappers = []any{}
 	file_v2_agent_proto_msgTypes[2].OneofWrappers = []any{}
 	file_v2_agent_proto_msgTypes[6].OneofWrappers = []any{}
-	file_v2_agent_proto_msgTypes[20].OneofWrappers = []any{}
+	file_v2_agent_proto_msgTypes[22].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v2_agent_proto_rawDesc), len(file_v2_agent_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   33,
+			NumMessages:   37,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

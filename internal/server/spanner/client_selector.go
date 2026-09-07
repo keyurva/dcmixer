@@ -250,3 +250,13 @@ func (s *schemaSelectorClient) GetStatVarDimensionsByPrefix(ctx context.Context,
 	return nil, nil
 }
 
+// GetStatVarsByConstraints forwards to the base Spanner client if supported.
+func (s *schemaSelectorClient) GetStatVarsByConstraints(ctx context.Context, req *pbv2.GetStatVarsByConstraintsRequest) (*pbv2.GetStatVarsByConstraintsResponse, error) {
+	if sc, ok := s.SpannerClient.(interface {
+		GetStatVarsByConstraints(ctx context.Context, req *pbv2.GetStatVarsByConstraintsRequest) (*pbv2.GetStatVarsByConstraintsResponse, error)
+	}); ok && sc != nil {
+		return sc.GetStatVarsByConstraints(ctx, req)
+	}
+	return &pbv2.GetStatVarsByConstraintsResponse{SeedDcid: req.GetSeedDcid()}, nil
+}
+

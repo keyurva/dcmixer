@@ -41,10 +41,20 @@ var (
 	redisCacheKeyProto    = &wrapperspb.StringValue{Value: "topic/topic_cache"}
 )
 
+// ConstraintValue represents a constraint value's DCID and human-readable display name.
+type ConstraintValue struct {
+	Dcid string
+	Name string
+}
+
 // StatVarInfo stores property metadata for a Statistical Variable.
 type StatVarInfo struct {
 	Dcid                  string
 	Name                  string
+	PopulationType        string
+	MeasuredProperty      string
+	StatType              string
+	ConstraintProperties  map[string]ConstraintValue
 	ObservationProperties []string
 	EntityMappings        []string
 }

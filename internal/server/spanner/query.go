@@ -41,6 +41,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/structpb"
 )
 
 const (
@@ -1321,37 +1322,27 @@ func IsTableNotFoundError(err error) bool {
 	return false
 }
 
-// GetStatVarDimensionsByPrefix queries Spanner directly for breakdown dimensions and sample StatVars sharing a prefix.
-func (sc *spannerDatabaseClient) GetStatVarDimensionsByPrefix(ctx context.Context, seedDcid string) ([]*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary, error) {
+func getPrefixAndPattern(seedDcid string) (startKey, endKey, likePattern string) {
+	parts := strings.Split(seedDcid, "_")
+	if len(parts) >= 3 {
+		rootPrefix := parts[0] + "_" + parts[1] + "_"
+		suffix := strings.Join(parts[2:], "_")
+		return rootPrefix, rootPrefix + "\uffff", "%" + suffix + "%"
+	}
 	prefix := seedDcid + "_"
+	return prefix, prefix + "\uffff", prefix + "%"
+}
 
-	sql := `
-WITH CandidateSVs AS (
-  SELECT subject_id, object_id
-  FROM Edge
-  WHERE subject_id >= @start_key
-    AND subject_id < @end_key
-    AND predicate = 'constraintProperties'
-  LIMIT 5000
-)
-SELECT
-  e.object_id AS dimension_prop,
-  COUNT(DISTINCT e.subject_id) AS sv_count,
-  ARRAY_AGG(DISTINCT v.object_id LIMIT 15) AS sample_values,
-  ARRAY_AGG(DISTINCT e.subject_id LIMIT 5) AS sample_svs
-FROM CandidateSVs e
-LEFT JOIN Edge v
-  ON e.subject_id = v.subject_id
-  AND e.object_id = v.predicate
-GROUP BY dimension_prop
-ORDER BY sv_count DESC
-LIMIT 20`
+// GetStatVarDimensionsByPrefix queries Spanner for breakdown dimensions and constraint values using statements.getStatVarDimensionsBySignature.
+func (sc *spannerDatabaseClient) GetStatVarDimensionsByPrefix(ctx context.Context, seedDcid string) ([]*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary, error) {
+	startKey, endKey, likePattern := getPrefixAndPattern(seedDcid)
 
 	stmt := spanner.Statement{
-		SQL: sql,
+		SQL: statements.getStatVarDimensionsBySignature,
 		Params: map[string]interface{}{
-			"start_key": prefix,
-			"end_key":   prefix + "\uffff",
+			"start_key":    startKey,
+			"end_key":      endKey,
+			"like_pattern": likePattern,
 		},
 	}
 
@@ -1378,10 +1369,17 @@ LIMIT 20`
 					sampleSVs = append(sampleSVs, ns.StringVal)
 				}
 			}
+			var constraintVals []string
+			for _, ns := range sampleVals {
+				if ns.Valid && ns.StringVal != "" {
+					constraintVals = append(constraintVals, ns.StringVal)
+				}
+			}
 			dimensions = append(dimensions, &pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary{
-				Dimension:      prop,
-				AvailableCount: int32(count),
-				SampleSlices:   sampleSVs,
+				Dimension:        prop,
+				AvailableCount:   int32(count),
+				SampleSlices:     sampleSVs,
+				ConstraintValues: constraintVals,
 			})
 		}
 		return nil
@@ -1391,4 +1389,158 @@ LIMIT 20`
 	}
 	return dimensions, nil
 }
+
+// GetStatVarsByConstraints retrieves child StatVars matching requested constraint properties and values as a pbv2.Table.
+func (sc *spannerDatabaseClient) GetStatVarsByConstraints(
+	ctx context.Context,
+	req *pbv2.GetStatVarsByConstraintsRequest,
+) (*pbv2.GetStatVarsByConstraintsResponse, error) {
+	startKey, endKey, likePattern := getPrefixAndPattern(req.GetSeedDcid())
+
+	stmt := spanner.Statement{
+		SQL: statements.getStatVarsByConstraints,
+		Params: map[string]interface{}{
+			"start_key":    startKey,
+			"end_key":      endKey,
+			"like_pattern": likePattern,
+		},
+	}
+
+	svProps := make(map[string]map[string]string)
+	svNames := make(map[string]string)
+	err := sc.executeQuery(ctx, stmt, func(iter *spanner.RowIterator) error {
+		for {
+			row, err := iter.Next()
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				return err
+			}
+			var svDcid, svName, prop string
+			var val spanner.NullString
+			if err := row.Columns(&svDcid, &svName, &prop, &val); err != nil {
+				return fmt.Errorf("error reading row in GetStatVarsByConstraints: %w", err)
+			}
+			if svName != "" {
+				svNames[svDcid] = svName
+			}
+			if _, ok := svProps[svDcid]; !ok {
+				svProps[svDcid] = make(map[string]string)
+			}
+			if val.Valid {
+				svProps[svDcid][prop] = val.StringVal
+			} else {
+				svProps[svDcid][prop] = ""
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	matchValue := func(actual string, allowed []string) bool {
+		if len(allowed) == 0 {
+			return true
+		}
+		actualLower := strings.ToLower(actual)
+		for _, a := range allowed {
+			aLower := strings.ToLower(a)
+			if actualLower == aLower || strings.Contains(actualLower, aLower) || strings.Contains(aLower, actualLower) {
+				return true
+			}
+		}
+		return false
+	}
+
+	type matchedSV struct {
+		dcid      string
+		name      string
+		matchType string
+		props     map[string]string
+	}
+
+	var exactMatches []matchedSV
+	var partialMatches []matchedSV
+	seenCols := make(map[string]bool)
+
+	for svDcid, props := range svProps {
+		matchedCount := 0
+		allRequestedMatched := true
+		for reqProp, allowedList := range req.GetConstraints() {
+			actualVal, exists := props[reqProp]
+			if exists && matchValue(actualVal, allowedList.GetValues()) {
+				matchedCount++
+			} else {
+				allRequestedMatched = false
+			}
+		}
+
+		if allRequestedMatched {
+			exactMatches = append(exactMatches, matchedSV{
+				dcid:      svDcid,
+				name:      svNames[svDcid],
+				matchType: "EXACT",
+				props:     props,
+			})
+			for k := range props {
+				seenCols[k] = true
+			}
+		} else if matchedCount > 0 && matchedCount >= len(req.GetConstraints())-1 {
+			partialMatches = append(partialMatches, matchedSV{
+				dcid:      svDcid,
+				name:      svNames[svDcid],
+				matchType: "PARTIAL",
+				props:     props,
+			})
+			for k := range props {
+				seenCols[k] = true
+			}
+		}
+	}
+
+	sort.Slice(exactMatches, func(i, j int) bool {
+		if len(exactMatches[i].props) != len(exactMatches[j].props) {
+			return len(exactMatches[i].props) < len(exactMatches[j].props)
+		}
+		return exactMatches[i].dcid < exactMatches[j].dcid
+	})
+	sort.Slice(partialMatches, func(i, j int) bool { return partialMatches[i].dcid < partialMatches[j].dcid })
+
+	allMatched := append(exactMatches, partialMatches...)
+	if len(allMatched) > 40 {
+		allMatched = allMatched[:40]
+	}
+
+	var propCols []string
+	for k := range seenCols {
+		propCols = append(propCols, k)
+	}
+	sort.Strings(propCols)
+
+	columns := append([]string{"dcid", "name", "match_type"}, propCols...)
+	var rows []*structpb.ListValue
+	for _, item := range allMatched {
+		rowVals := []*structpb.Value{
+			structpb.NewStringValue(item.dcid),
+			structpb.NewStringValue(item.name),
+			structpb.NewStringValue(item.matchType),
+		}
+		for _, col := range propCols {
+			rowVals = append(rowVals, structpb.NewStringValue(item.props[col]))
+		}
+		rows = append(rows, &structpb.ListValue{Values: rowVals})
+	}
+
+	return &pbv2.GetStatVarsByConstraintsResponse{
+		SeedDcid: req.GetSeedDcid(),
+		StatVars: &pbv2.Table{
+			Columns: columns,
+			Rows:    rows,
+		},
+	}, nil
+}
+
+
 

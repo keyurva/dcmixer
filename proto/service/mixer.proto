@@ -262,6 +262,18 @@ service Mixer {
     };
   }
 
+  rpc V2AgentGetStatVarsByConstraints(
+      datacommons.v2.GetStatVarsByConstraintsRequest)
+      returns (datacommons.v2.GetStatVarsByConstraintsResponse) {
+    option (google.api.http) = {
+      get : "/v2/agent/get_stat_vars_by_constraints"
+      additional_bindings : {
+        post : "/v2/agent/get_stat_vars_by_constraints"
+        body : "*"
+      }
+    };
+  }
+
   // Get rankings for given stat var DCIDs.
   rpc V2GetLocationsRankings(GetLocationsRankingsRequest)
       returns (GetLocationsRankingsResponse) {
