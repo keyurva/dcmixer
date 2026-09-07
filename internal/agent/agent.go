@@ -52,23 +52,32 @@ type Service struct {
 	mixer               Mixer
 	cache               *Cache
 	defaultExpandTopics bool
+	defaultSvgRoot      string
 }
 
 // ServiceOptions holds optional configuration for agent.Service.
 type ServiceOptions struct {
 	DefaultExpandTopics *bool
+	DefaultSvgRoot      string
 }
 
 // NewService constructs a new Service instance backed by the provided Mixer and Cache.
 func NewService(mixer Mixer, cache *Cache, opts *ServiceOptions) *Service {
 	defaultExpandTopics := true
-	if opts != nil && opts.DefaultExpandTopics != nil {
-		defaultExpandTopics = *opts.DefaultExpandTopics
+	defaultSvgRoot := "dc/g/Root"
+	if opts != nil {
+		if opts.DefaultExpandTopics != nil {
+			defaultExpandTopics = *opts.DefaultExpandTopics
+		}
+		if opts.DefaultSvgRoot != "" {
+			defaultSvgRoot = opts.DefaultSvgRoot
+		}
 	}
 	return &Service{
 		mixer:               mixer,
 		cache:               cache,
 		defaultExpandTopics: defaultExpandTopics,
+		defaultSvgRoot:      defaultSvgRoot,
 	}
 }
 
@@ -83,4 +92,9 @@ func (s *Service) Reset() {
 // DefaultExpandTopics returns the configured default topic expansion behavior.
 func (s *Service) DefaultExpandTopics() bool {
 	return s.defaultExpandTopics
+}
+
+// DefaultSvgRoot returns the configured default root StatVarGroup DCID.
+func (s *Service) DefaultSvgRoot() string {
+	return s.defaultSvgRoot
 }

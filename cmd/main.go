@@ -140,6 +140,11 @@ var (
 		true,
 		"Default value for expand_topics in agent search_indicators if not specified in request.",
 	)
+	agentDefaultSvgRoot = flag.String(
+		"agent_default_svg_root",
+		"dc/g/Root",
+		"Default root StatVarGroup DCID for agent indicator ontology traversal (overridable for DCP custom instances).",
+	)
 )
 
 func main() {
@@ -559,6 +564,7 @@ func main() {
 			UseSpannerGraph:                   *useSpannerGraph,
 			TopicExpander:                     topicExpander,
 			AgentDefaultExpandTopics:          agentDefaultExpandTopics,
+			AgentDefaultSvgRoot:               *agentDefaultSvgRoot,
 		},
 	)
 	pbs.RegisterMixerServer(srv, mixerServer)

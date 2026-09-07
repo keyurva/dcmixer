@@ -307,6 +307,7 @@ type MixerServerOptions struct {
 	UseSpannerGraph                   bool
 	TopicExpander                     resolve.TopicExpander
 	AgentDefaultExpandTopics          *bool
+	AgentDefaultSvgRoot               string
 }
 
 // NewMixerServer creates a new mixer server instance.
@@ -334,9 +335,10 @@ func NewMixerServer(
 		s.useSpannerGraph = opts.UseSpannerGraph
 		s.topicExpander = opts.TopicExpander
 		s.cachedata.Store(opts.CacheData)
-		if opts.AgentDefaultExpandTopics != nil {
+		if opts.AgentDefaultExpandTopics != nil || opts.AgentDefaultSvgRoot != "" {
 			agentOpts = &agent.ServiceOptions{
 				DefaultExpandTopics: opts.AgentDefaultExpandTopics,
+				DefaultSvgRoot:      opts.AgentDefaultSvgRoot,
 			}
 		}
 	}
