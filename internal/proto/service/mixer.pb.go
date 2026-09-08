@@ -53,7 +53,7 @@ const file_service_mixer_proto_rawDesc = "" +
 	"\n" +
 	"\x13service/mixer.proto\x12\vdatacommons\x1a\x1cgoogle/api/annotations.proto\x1a\x19google/api/httpbody.proto\x1a\fcustom.proto\x1a\n" +
 	"misc.proto\x1a\vplace.proto\x1a\vquery.proto\x1a\n" +
-	"stat.proto\x1a\x0estat_var.proto\x1a\vrecon.proto\x1a\x18v1/property_values.proto\x1a\x11v1/variable.proto\x1a\rv1/info.proto\x1a\x15v1/observations.proto\x1a\x1av1/observation_dates.proto\x1a\rv1/page.proto\x1a\x0ev2/event.proto\x1a\rv2/node.proto\x1a\x14v2/node_search.proto\x1a\x14v2/observation.proto\x1a\x10v2/resolve.proto\x1a\x0ev2/agent.proto\x1a\x0fsdmx/sdmx.proto2\x8b=\n" +
+	"stat.proto\x1a\x0estat_var.proto\x1a\vrecon.proto\x1a\x18v1/property_values.proto\x1a\x11v1/variable.proto\x1a\rv1/info.proto\x1a\x15v1/observations.proto\x1a\x1av1/observation_dates.proto\x1a\rv1/page.proto\x1a\x0ev2/event.proto\x1a\rv2/node.proto\x1a\x14v2/node_search.proto\x1a\x14v2/observation.proto\x1a\x10v2/resolve.proto\x1a\x0ev2/agent.proto\x1a\x0fsdmx/sdmx.proto2\xe1<\n" +
 	"\x05Mixer\x12y\n" +
 	"\n" +
 	"V3SdmxData\x12!.datacommons.sdmx.SdmxRestRequest\x1a\x14.google.api.HttpBody\"0\x82\xd3\xe4\x93\x02*Z\x0f\x12\r/sdmx/v3/data\x12\x17/sdmx/v3/data/{tail=**}0\x01\x12\x8f\x01\n" +
@@ -85,8 +85,8 @@ const file_service_mixer_proto_rawDesc = "" +
 	"\x17V2AgentSearchIndicators\x12'.datacommons.v2.SearchIndicatorsRequest\x1a(.datacommons.v2.SearchIndicatorsResponse\"E\x82\xd3\xe4\x93\x02?Z :\x01*\"\x1b/v2/agent/search_indicators\x12\x1b/v2/agent/search_indicators\x12\x90\x01\n" +
 	"\x16V2AgentGetObservations\x12&.datacommons.v2.GetObservationsRequest\x1a'.datacommons.v2.GetObservationsResponse\"%\x82\xd3\xe4\x93\x02\x1f:\x01*\"\x1a/v2/agent/get_observations\x12\xc4\x01\n" +
 	"\x1aV2AgentGetVariableMetadata\x12*.datacommons.v2.GetVariableMetadataRequest\x1a+.datacommons.v2.GetVariableMetadataResponse\"M\x82\xd3\xe4\x93\x02GZ$:\x01*\"\x1f/v2/agent/get_variable_metadata\x12\x1f/v2/agent/get_variable_metadata\x12\xce\x01\n" +
-	"\x1cV2AgentInspectIndicatorNodes\x12,.datacommons.v2.InspectIndicatorNodesRequest\x1a-.datacommons.v2.InspectIndicatorNodesResponse\"Q\x82\xd3\xe4\x93\x02KZ&:\x01*\"!/v2/agent/inspect_indicator_nodes\x12!/v2/agent/inspect_indicator_nodes\x12\xe1\x01\n" +
-	"\x1fV2AgentGetStatVarsByConstraints\x12/.datacommons.v2.GetStatVarsByConstraintsRequest\x1a0.datacommons.v2.GetStatVarsByConstraintsResponse\"[\x82\xd3\xe4\x93\x02UZ+:\x01*\"&/v2/agent/get_stat_vars_by_constraints\x12&/v2/agent/get_stat_vars_by_constraints\x12\xa0\x01\n" +
+	"\x1cV2AgentInspectIndicatorNodes\x12,.datacommons.v2.InspectIndicatorNodesRequest\x1a-.datacommons.v2.InspectIndicatorNodesResponse\"Q\x82\xd3\xe4\x93\x02KZ&:\x01*\"!/v2/agent/inspect_indicator_nodes\x12!/v2/agent/inspect_indicator_nodes\x12\xb7\x01\n" +
+	"\x1fV2AgentGetStatVarsByConstraints\x12/.datacommons.v2.GetStatVarsByConstraintsRequest\x1a0.datacommons.v2.GetStatVarsByConstraintsResponse\"1\x82\xd3\xe4\x93\x02+:\x01*\"&/v2/agent/get_stat_vars_by_constraints\x12\xa0\x01\n" +
 	"\x16V2GetLocationsRankings\x12(.datacommons.GetLocationsRankingsRequest\x1a).datacommons.GetLocationsRankingsResponse\"1\x82\xd3\xe4\x93\x02+Z\x16:\x01*\"\x11/v2/place/ranking\x12\x11/v2/place/ranking\x12[\n" +
 	"\x05Query\x12\x19.datacommons.QueryRequest\x1a\x1a.datacommons.QueryResponse\"\x1b\x82\xd3\xe4\x93\x02\x15Z\v:\x01*\"\x06/query\x12\x06/query\x12n\n" +
 	"\bGetStats\x12\x1c.datacommons.GetStatsRequest\x1a\x1d.datacommons.GetStatsResponse\"%\x82\xd3\xe4\x93\x02\x1fZ\x10:\x01*\"\v/bulk/stats\x12\v/bulk/stats\x12\x9e\x01\n" +

@@ -266,11 +266,8 @@ service Mixer {
       datacommons.v2.GetStatVarsByConstraintsRequest)
       returns (datacommons.v2.GetStatVarsByConstraintsResponse) {
     option (google.api.http) = {
-      get : "/v2/agent/get_stat_vars_by_constraints"
-      additional_bindings : {
-        post : "/v2/agent/get_stat_vars_by_constraints"
-        body : "*"
-      }
+      post : "/v2/agent/get_stat_vars_by_constraints"
+      body : "*"
     };
   }
 
