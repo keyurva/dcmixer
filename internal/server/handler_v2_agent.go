@@ -17,10 +17,11 @@ package server
 
 import (
 	"context"
+	"sort"
 	"strings"
-	"sync"
 
 	pbv2 "github.com/datacommonsorg/mixer/internal/proto/v2"
+	"github.com/datacommonsorg/mixer/internal/server/topic"
 	"google.golang.org/protobuf/types/known/structpb"
 )
 
@@ -34,8 +35,7 @@ func (s *Server) V2AgentResolvePlaces(
 }
 
 // V2AgentSearchIndicators implements API for mixer.V2AgentSearchIndicators.
-// It delegates incoming RPC requests directly to the isolated agent.Service layer
-// and populates tabular constraint_values for returned StatVars and topic member variables.
+// It delegates incoming RPC requests directly to the isolated agent.Service layer.
 func (s *Server) V2AgentSearchIndicators(
 	ctx context.Context,
 	in *pbv2.SearchIndicatorsRequest,
@@ -44,7 +44,7 @@ func (s *Server) V2AgentSearchIndicators(
 	if err != nil || resp == nil {
 		return resp, err
 	}
-	s.populateConstraintValuesTable(ctx, resp)
+	s.populateConstraintPropertiesTable(ctx, resp)
 	return resp, nil
 }
 
@@ -76,11 +76,21 @@ func (s *Server) V2AgentInspectIndicatorNodes(
 }
 
 // GetStatVarDimensionsByPrefix delegates to the underlying SpannerClient if available.
-func (s *Server) GetStatVarDimensionsByPrefix(ctx context.Context, seedDcid string) ([]*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary, error) {
+func (s *Server) GetStatVarDimensionsByPrefix(ctx context.Context, seedDcid string, properties []string) ([]*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary, error) {
 	if sc, ok := s.spannerStalenessTimestampProvider.(interface {
-		GetStatVarDimensionsByPrefix(ctx context.Context, seedDcid string) ([]*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary, error)
+		GetStatVarDimensionsByPrefix(ctx context.Context, seedDcid string, properties []string) ([]*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary, error)
 	}); ok && sc != nil {
-		return sc.GetStatVarDimensionsByPrefix(ctx, seedDcid)
+		return sc.GetStatVarDimensionsByPrefix(ctx, seedDcid, properties)
+	}
+	return nil, nil
+}
+
+// GetStatVarConstraintPropertiesByPrefix delegates to the underlying SpannerClient if available.
+func (s *Server) GetStatVarConstraintPropertiesByPrefix(ctx context.Context, dcids []string) ([]string, error) {
+	if sc, ok := s.spannerStalenessTimestampProvider.(interface {
+		GetStatVarConstraintPropertiesByPrefix(ctx context.Context, dcids []string) ([]string, error)
+	}); ok && sc != nil {
+		return sc.GetStatVarConstraintPropertiesByPrefix(ctx, dcids)
 	}
 	return nil, nil
 }
@@ -98,99 +108,95 @@ func (s *Server) V2AgentGetStatVarsByConstraints(
 	return &pbv2.GetStatVarsByConstraintsResponse{SeedDcid: in.GetSeedDcid()}, nil
 }
 
-// populateConstraintValuesTable extracts seed StatVar DCIDs from SearchIndicatorsResponse
-// and builds a consolidated pbv2.Table with columns: ["seed_dcid", "property", "value_dcid", "value_name"].
-func (s *Server) populateConstraintValuesTable(ctx context.Context, resp *pbv2.SearchIndicatorsResponse) {
-	seenSeeds := make(map[string]bool)
-	var seedDcids []string
+// populateConstraintPropertiesTable extracts candidate StatVar DCIDs from SearchIndicatorsResponse
+// and builds a consolidated pbv2.Table with columns: ["dcid", "constraint_properties"] using in-memory TopicCache.
+func (s *Server) populateConstraintPropertiesTable(ctx context.Context, resp *pbv2.SearchIndicatorsResponse) {
+	seen := make(map[string]bool)
+	var candidateDcids []string
 
-	addSeed := func(dcid string) {
-		if dcid != "" && !seenSeeds[dcid] && len(seedDcids) < 20 {
-			seenSeeds[dcid] = true
-			seedDcids = append(seedDcids, dcid)
+	addCandidate := func(dcid string) {
+		if dcid != "" && !seen[dcid] {
+			seen[dcid] = true
+			candidateDcids = append(candidateDcids, dcid)
 		}
 	}
 
 	if resp.VariableCandidates != nil {
 		for _, row := range resp.VariableCandidates.GetRows() {
 			if len(row.GetValues()) > 0 {
-				addSeed(row.GetValues()[0].GetStringValue())
+				addCandidate(row.GetValues()[0].GetStringValue())
+			}
+		}
+	}
+	if resp.TopicCandidates != nil {
+		for _, row := range resp.TopicCandidates.GetRows() {
+			if len(row.GetValues()) >= 5 {
+				for _, mv := range row.GetValues()[4].GetListValue().GetValues() {
+					addCandidate(mv.GetStringValue())
+				}
 			}
 		}
 	}
 	for _, v := range resp.GetVariables() {
-		addSeed(v.GetDcid())
-	}
-	if resp.TopicCandidates != nil {
-		for _, row := range resp.TopicCandidates.GetRows() {
-			if len(row.GetValues()) > 4 && row.GetValues()[4].GetListValue() != nil {
-				for _, val := range row.GetValues()[4].GetListValue().GetValues() {
-					addSeed(val.GetStringValue())
-				}
-			}
-		}
+		addCandidate(v.GetDcid())
 	}
 	for _, t := range resp.GetTopics() {
 		for _, mv := range t.GetMemberVariables() {
-			addSeed(mv)
+			addCandidate(mv)
 		}
 	}
 
-	if len(seedDcids) == 0 {
+	if len(candidateDcids) == 0 || s.topicExpander == nil {
 		return
 	}
 
-	type seedDims struct {
-		seedDcid string
-		dims     []*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary
+	infoProvider, ok := s.topicExpander.(interface {
+		GetStatVarInfos(ctx context.Context, dcids []string) (map[string]*topic.StatVarInfo, error)
+	})
+	if !ok {
+		return
 	}
 
-	results := make([]seedDims, len(seedDcids))
-	var wg sync.WaitGroup
-	for i, seed := range seedDcids {
-		wg.Add(1)
-		go func(idx int, dcid string) {
-			defer wg.Done()
-			dims, err := s.GetStatVarDimensionsByPrefix(ctx, dcid)
-			if err == nil && len(dims) > 0 {
-				results[idx] = seedDims{seedDcid: dcid, dims: dims}
-			}
-		}(i, seed)
+	infos, err := infoProvider.GetStatVarInfos(ctx, candidateDcids)
+	if err != nil || len(infos) == 0 {
+		return
 	}
-	wg.Wait()
 
 	table := &pbv2.Table{
-		Columns: []string{"seed_dcid", "property", "value_dcid", "value_name"},
+		Columns: []string{"dcid", "constraint_properties"},
 		Rows:    []*structpb.ListValue{},
 	}
-	for _, res := range results {
-		if res.seedDcid == "" {
+	signatureCounts := make(map[string]int)
+	for _, dcid := range candidateDcids {
+		info := infos[dcid]
+		if info == nil || len(info.ConstraintProperties) == 0 {
 			continue
 		}
-		for _, dim := range res.dims {
-			prop := dim.GetDimension()
-			for _, cvStr := range dim.GetConstraintValues() {
-				parts := strings.SplitN(cvStr, "|||", 2)
-				valDcid := parts[0]
-				valName := valDcid
-				if len(parts) == 2 && parts[1] != "" {
-					valName = parts[1]
-				}
-				row, err := structpb.NewList([]any{
-					res.seedDcid,
-					prop,
-					valDcid,
-					valName,
-				})
-				if err == nil {
-					table.Rows = append(table.Rows, row)
-				}
-			}
+		var props []string
+		for prop := range info.ConstraintProperties {
+			props = append(props, prop)
+		}
+		sort.Strings(props)
+		sig := info.PopulationType + "|" + strings.Join(props, ",")
+		if signatureCounts[sig] >= 2 {
+			continue
+		}
+		signatureCounts[sig]++
+		var propList []any
+		for _, prop := range props {
+			propList = append(propList, prop)
+		}
+		row, err := structpb.NewList([]any{
+			dcid,
+			propList,
+		})
+		if err == nil {
+			table.Rows = append(table.Rows, row)
 		}
 	}
 
 	if len(table.Rows) > 0 {
-		resp.ConstraintValues = table
+		resp.ConstraintProperties = table
 	}
 }
 

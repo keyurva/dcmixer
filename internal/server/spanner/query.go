@@ -1322,27 +1322,13 @@ func IsTableNotFoundError(err error) bool {
 	return false
 }
 
-func getPrefixAndPattern(seedDcid string) (startKey, endKey, likePattern string) {
-	parts := strings.Split(seedDcid, "_")
-	if len(parts) >= 3 {
-		rootPrefix := parts[0] + "_" + parts[1] + "_"
-		suffix := strings.Join(parts[2:], "_")
-		return rootPrefix, rootPrefix + "\uffff", "%" + suffix + "%"
-	}
-	prefix := seedDcid + "_"
-	return prefix, prefix + "\uffff", prefix + "%"
-}
-
 // GetStatVarDimensionsByPrefix queries Spanner for breakdown dimensions and constraint values using statements.getStatVarDimensionsBySignature.
-func (sc *spannerDatabaseClient) GetStatVarDimensionsByPrefix(ctx context.Context, seedDcid string) ([]*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary, error) {
-	startKey, endKey, likePattern := getPrefixAndPattern(seedDcid)
-
+func (sc *spannerDatabaseClient) GetStatVarDimensionsByPrefix(ctx context.Context, seedDcid string, properties []string) ([]*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary, error) {
 	stmt := spanner.Statement{
 		SQL: statements.getStatVarDimensionsBySignature,
 		Params: map[string]interface{}{
-			"start_key":    startKey,
-			"end_key":      endKey,
-			"like_pattern": likePattern,
+			"seed_dcid":  seedDcid,
+			"properties": properties,
 		},
 	}
 
@@ -1390,19 +1376,67 @@ func (sc *spannerDatabaseClient) GetStatVarDimensionsByPrefix(ctx context.Contex
 	return dimensions, nil
 }
 
+// GetStatVarConstraintPropertiesByPrefix queries Spanner for distinct constraint properties using statements.getStatVarConstraintPropertiesBySignature.
+func (sc *spannerDatabaseClient) GetStatVarConstraintPropertiesByPrefix(ctx context.Context, dcids []string) ([]string, error) {
+	stmt := spanner.Statement{
+		SQL: statements.getStatVarConstraintPropertiesBySignature,
+		Params: map[string]interface{}{
+			"dcids": dcids,
+		},
+	}
+
+	var props []string
+	err := sc.executeQuery(ctx, stmt, func(iter *spanner.RowIterator) error {
+		for {
+			row, err := iter.Next()
+			if err == iterator.Done {
+				break
+			}
+			if err != nil {
+				return err
+			}
+			var prop string
+			if err := row.Columns(&prop); err != nil {
+				return fmt.Errorf("error reading row in GetStatVarConstraintPropertiesByPrefix: %w", err)
+			}
+			if prop != "" {
+				props = append(props, prop)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return props, nil
+}
+
 // GetStatVarsByConstraints retrieves child StatVars matching requested constraint properties and values as a pbv2.Table.
 func (sc *spannerDatabaseClient) GetStatVarsByConstraints(
 	ctx context.Context,
 	req *pbv2.GetStatVarsByConstraintsRequest,
 ) (*pbv2.GetStatVarsByConstraintsResponse, error) {
-	startKey, endKey, likePattern := getPrefixAndPattern(req.GetSeedDcid())
+	if len(req.GetConstraints()) == 0 {
+		return &pbv2.GetStatVarsByConstraintsResponse{
+			SeedDcid: req.GetSeedDcid(),
+			StatVars: &pbv2.Table{Columns: []string{"dcid", "name", "match_type"}},
+		}, nil
+	}
 
+	var firstProp, firstVal string
+	for prop, valList := range req.GetConstraints() {
+		if valList != nil && len(valList.GetValues()) > 0 {
+			firstProp = prop
+			firstVal = valList.GetValues()[0]
+			break
+		}
+	}
 	stmt := spanner.Statement{
 		SQL: statements.getStatVarsByConstraints,
 		Params: map[string]interface{}{
-			"start_key":    startKey,
-			"end_key":      endKey,
-			"like_pattern": likePattern,
+			"seed_dcid":  req.GetSeedDcid(),
+			"first_prop": firstProp,
+			"first_val":  firstVal,
 		},
 	}
 

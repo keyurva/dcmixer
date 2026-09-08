@@ -96,3 +96,11 @@ func (a *topicExpanderAdapter) GetTopicTargetSVs(ctx context.Context, topicDcid 
 	}
 	return a.m.GetTopicTargetSVs(ctx, topicDcid, expandTopics)
 }
+
+// GetStatVarInfos retrieves StatVarInfo maps directly from the underlying TopicCacheManager.
+func (a *topicExpanderAdapter) GetStatVarInfos(ctx context.Context, svDcids []string) (map[string]*topic.StatVarInfo, error) {
+	if a.m == nil {
+		return nil, nil
+	}
+	return a.m.GetStatVarInfos(ctx, svDcids)
+}

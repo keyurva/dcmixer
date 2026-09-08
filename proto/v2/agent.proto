@@ -85,8 +85,8 @@ message SearchIndicatorsResponse {
   // Variables Table (columns: ["dcid", "name", "placesWithData", "observationProperties"])
   Table variable_candidates = 8;
 
-  // Constraint Values Table (columns: ["seed_dcid", "property", "value_dcid", "value_name"])
-  Table constraint_values = 9;
+  // Constraint Properties Table (columns: ["seed_dcid", "constraint_properties"])
+  Table constraint_properties = 9;
 }
 
 message EntityList {
@@ -228,6 +228,7 @@ message GetVariableMetadataResponse {
 message InspectIndicatorNodesRequest {
   repeated string dcids = 1;
   repeated string place_dcids = 2;
+  repeated string properties = 3;
 }
 
 // Response payload for the inspect_indicator_nodes tool endpoint.

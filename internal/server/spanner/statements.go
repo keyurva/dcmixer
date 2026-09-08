@@ -152,6 +152,8 @@ var statements = struct {
 	checkGroupPlaceExistence string
 	// Fetch breakdown dimensions and constraint values for a seed stat var.
 	getStatVarDimensionsBySignature string
+	// Fetch only distinct constraint property names for a seed stat var.
+	getStatVarConstraintPropertiesBySignature string
 	// Fetch matched breakdown stat vars by structural signature and constraints.
 	getStatVarsByConstraints string
 }{
@@ -816,44 +818,109 @@ OR CreationTimestamp > (
 		  AND o.observation_about IN UNNEST(@entities)
 		ORDER BY variable, entity`,
 	getStatVarDimensionsBySignature: `
-WITH CandidateSVs AS (
-  SELECT subject_id, object_id
+WITH SeedProps AS (
+  SELECT
+    MAX(IF(predicate = 'populationType', object_id, NULL)) AS pop_type,
+    MAX(IF(predicate = 'measuredProperty', object_id, NULL)) AS meas_prop
   FROM Edge
-  WHERE subject_id >= @start_key
-    AND subject_id < @end_key
-    AND subject_id LIKE @like_pattern
-    AND predicate = 'constraintProperties'
-  LIMIT 5000
+  WHERE subject_id = @seed_dcid
+    AND predicate IN ('populationType', 'measuredProperty')
+),
+SeedRelatedSVs AS (
+  SELECT DISTINCT e_peer.subject_id
+  FROM Edge e_svg
+  JOIN@{JOIN_METHOD=APPLY_JOIN} Edge@{FORCE_INDEX=InEdge} e_peer
+    ON e_peer.object_id = e_svg.object_id
+    AND e_peer.predicate = 'memberOf'
+  WHERE e_svg.subject_id = @seed_dcid
+    AND e_svg.predicate = 'memberOf'
+  UNION DISTINCT
+  SELECT DISTINCT e_cross.subject_id
+  FROM Edge e_c
+  JOIN@{JOIN_METHOD=APPLY_JOIN} Edge e_val
+    ON e_c.subject_id = e_val.subject_id
+    AND e_c.object_id = e_val.predicate
+  JOIN@{JOIN_METHOD=APPLY_JOIN} Edge@{FORCE_INDEX=InEdge} e_cross
+    ON e_cross.object_id = e_val.object_id
+    AND e_cross.predicate = e_val.predicate
+  WHERE e_c.subject_id = @seed_dcid
+    AND e_c.predicate = 'constraintProperties'
+),
+CandidateSVs AS (
+  SELECT r.subject_id, e_dim.object_id AS dimension_prop
+  FROM SeedProps s,
+  SeedRelatedSVs r
+  JOIN@{JOIN_METHOD=APPLY_JOIN} Edge e_pop
+    ON r.subject_id = e_pop.subject_id
+    AND e_pop.predicate = 'populationType'
+    AND e_pop.object_id = s.pop_type
+  JOIN@{JOIN_METHOD=APPLY_JOIN} Edge e_meas
+    ON r.subject_id = e_meas.subject_id
+    AND e_meas.predicate = 'measuredProperty'
+    AND e_meas.object_id = s.meas_prop
+  JOIN@{JOIN_METHOD=APPLY_JOIN} Edge e_dim
+    ON r.subject_id = e_dim.subject_id
+    AND e_dim.predicate = 'constraintProperties'
+  WHERE e_dim.object_id IN UNNEST(@properties)
 )
 SELECT
-  e.object_id AS dimension_prop,
+  e.dimension_prop,
   COUNT(DISTINCT e.subject_id) AS sv_count,
-  ARRAY_AGG(DISTINCT CONCAT(v.object_id, '|||', IFNULL(dest.name, '')) LIMIT 100) AS sample_values,
-  ARRAY_AGG(DISTINCT e.subject_id LIMIT 5) AS sample_svs
+  ARRAY_AGG(DISTINCT CONCAT(v.object_id, '|||', IFNULL(dest.name, '')) IGNORE NULLS LIMIT 100) AS sample_values,
+  ARRAY_AGG(DISTINCT e.subject_id IGNORE NULLS LIMIT 5) AS sample_svs
 FROM CandidateSVs e
-LEFT JOIN Edge v
+LEFT JOIN@{JOIN_METHOD=APPLY_JOIN} Edge v
   ON e.subject_id = v.subject_id
-  AND e.object_id = v.predicate
-LEFT JOIN Node dest
+  AND e.dimension_prop = v.predicate
+LEFT JOIN@{JOIN_METHOD=APPLY_JOIN} Node dest
   ON v.object_id = dest.subject_id
 GROUP BY dimension_prop
 ORDER BY sv_count DESC
 LIMIT 30`,
+	getStatVarConstraintPropertiesBySignature: `
+SELECT DISTINCT object_id AS dimension_prop
+FROM Edge
+WHERE subject_id IN UNNEST(@dcids)
+  AND predicate = 'constraintProperties'
+ORDER BY dimension_prop
+LIMIT 30`,
 	getStatVarsByConstraints: `
+WITH SeedProps AS (
+  SELECT
+    MAX(IF(predicate = 'populationType', object_id, NULL)) AS pop_type,
+    MAX(IF(predicate = 'measuredProperty', object_id, NULL)) AS meas_prop
+  FROM Edge
+  WHERE subject_id = @seed_dcid
+    AND predicate IN ('populationType', 'measuredProperty')
+),
+MatchedSVs AS (
+  SELECT e_first.subject_id
+  FROM SeedProps s
+  JOIN@{JOIN_METHOD=APPLY_JOIN} Edge@{FORCE_INDEX=InEdge} e_first
+    ON e_first.object_id = @first_val
+    AND e_first.predicate = @first_prop
+  JOIN@{JOIN_METHOD=APPLY_JOIN} Edge e_pop
+    ON e_first.subject_id = e_pop.subject_id
+    AND e_pop.predicate = 'populationType'
+    AND e_pop.object_id = s.pop_type
+  JOIN@{JOIN_METHOD=APPLY_JOIN} Edge e_meas
+    ON e_first.subject_id = e_meas.subject_id
+    AND e_meas.predicate = 'measuredProperty'
+    AND e_meas.object_id = s.meas_prop
+  LIMIT 500
+)
 SELECT
-  e.subject_id AS sv_dcid,
+  m.subject_id AS sv_dcid,
   IFNULL(n.name, '') AS sv_name,
   e.object_id AS prop,
   v.object_id AS val
-FROM Edge e
-LEFT JOIN Edge v
-  ON e.subject_id = v.subject_id
-  AND e.object_id = v.predicate
-LEFT JOIN Node n
-  ON e.subject_id = n.subject_id
-WHERE e.subject_id >= @start_key
-  AND e.subject_id < @end_key
-  AND e.subject_id LIKE @like_pattern
+FROM MatchedSVs m
+JOIN@{JOIN_METHOD=APPLY_JOIN} Edge e
+  ON m.subject_id = e.subject_id
   AND e.predicate = 'constraintProperties'
-LIMIT 5000`,
+LEFT JOIN@{JOIN_METHOD=APPLY_JOIN} Edge v
+  ON m.subject_id = v.subject_id
+  AND e.object_id = v.predicate
+LEFT JOIN@{JOIN_METHOD=APPLY_JOIN} Node n
+  ON m.subject_id = n.subject_id`,
 }

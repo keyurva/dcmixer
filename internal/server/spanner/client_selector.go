@@ -241,11 +241,21 @@ func logMultiEntityInvocation(methodName string, args ...any) {
 }
 
 // GetStatVarDimensionsByPrefix forwards to the base Spanner client if supported.
-func (s *schemaSelectorClient) GetStatVarDimensionsByPrefix(ctx context.Context, seedDcid string) ([]*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary, error) {
+func (s *schemaSelectorClient) GetStatVarDimensionsByPrefix(ctx context.Context, seedDcid string, properties []string) ([]*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary, error) {
 	if sc, ok := s.SpannerClient.(interface {
-		GetStatVarDimensionsByPrefix(ctx context.Context, seedDcid string) ([]*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary, error)
+		GetStatVarDimensionsByPrefix(ctx context.Context, seedDcid string, properties []string) ([]*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary, error)
 	}); ok && sc != nil {
-		return sc.GetStatVarDimensionsByPrefix(ctx, seedDcid)
+		return sc.GetStatVarDimensionsByPrefix(ctx, seedDcid, properties)
+	}
+	return nil, nil
+}
+
+// GetStatVarConstraintPropertiesByPrefix forwards to the base Spanner client if supported.
+func (s *schemaSelectorClient) GetStatVarConstraintPropertiesByPrefix(ctx context.Context, dcids []string) ([]string, error) {
+	if sc, ok := s.SpannerClient.(interface {
+		GetStatVarConstraintPropertiesByPrefix(ctx context.Context, dcids []string) ([]string, error)
+	}); ok && sc != nil {
+		return sc.GetStatVarConstraintPropertiesByPrefix(ctx, dcids)
 	}
 	return nil, nil
 }

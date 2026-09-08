@@ -267,10 +267,10 @@ type SearchIndicatorsResponse struct {
 	TopicCandidates *Table `protobuf:"bytes,7,opt,name=topic_candidates,json=topicCandidates,proto3" json:"topic_candidates,omitempty"`
 	// Variables Table (columns: ["dcid", "name", "placesWithData", "observationProperties"])
 	VariableCandidates *Table `protobuf:"bytes,8,opt,name=variable_candidates,json=variableCandidates,proto3" json:"variable_candidates,omitempty"`
-	// Constraint Values Table (columns: ["seed_dcid", "property", "value_dcid", "value_name"])
-	ConstraintValues *Table `protobuf:"bytes,9,opt,name=constraint_values,json=constraintValues,proto3" json:"constraint_values,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	// Constraint Properties Table (columns: ["seed_dcid", "constraint_properties"])
+	ConstraintProperties *Table `protobuf:"bytes,9,opt,name=constraint_properties,json=constraintProperties,proto3" json:"constraint_properties,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *SearchIndicatorsResponse) Reset() {
@@ -364,9 +364,9 @@ func (x *SearchIndicatorsResponse) GetVariableCandidates() *Table {
 	return nil
 }
 
-func (x *SearchIndicatorsResponse) GetConstraintValues() *Table {
+func (x *SearchIndicatorsResponse) GetConstraintProperties() *Table {
 	if x != nil {
-		return x.ConstraintValues
+		return x.ConstraintProperties
 	}
 	return nil
 }
@@ -819,6 +819,7 @@ type InspectIndicatorNodesRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Dcids         []string               `protobuf:"bytes,1,rep,name=dcids,proto3" json:"dcids,omitempty"`
 	PlaceDcids    []string               `protobuf:"bytes,2,rep,name=place_dcids,json=placeDcids,proto3" json:"place_dcids,omitempty"`
+	Properties    []string               `protobuf:"bytes,3,rep,name=properties,proto3" json:"properties,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -863,6 +864,13 @@ func (x *InspectIndicatorNodesRequest) GetDcids() []string {
 func (x *InspectIndicatorNodesRequest) GetPlaceDcids() []string {
 	if x != nil {
 		return x.PlaceDcids
+	}
+	return nil
+}
+
+func (x *InspectIndicatorNodesRequest) GetProperties() []string {
+	if x != nil {
+		return x.Properties
 	}
 	return nil
 }
@@ -2161,7 +2169,7 @@ const file_v2_agent_proto_rawDesc = "" +
 	"placeDcidsB\x11\n" +
 	"\x0f_include_topicsB\x10\n" +
 	"\x0e_expand_topicsB\t\n" +
-	"\a_target\"\xcf\v\n" +
+	"\a_target\"\xd7\v\n" +
 	"\x18SearchIndicatorsResponse\x12\x16\n" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12p\n" +
 	"\x12dcid_name_mappings\x18\x02 \x03(\v2>.datacommons.v2.SearchIndicatorsResponse.DcidNameMappingsEntryB\x02\x18\x01R\x10dcidNameMappings\x12\x80\x01\n" +
@@ -2170,8 +2178,8 @@ const file_v2_agent_proto_rawDesc = "" +
 	"\tvariables\x18\x05 \x03(\v21.datacommons.v2.SearchIndicatorsResponse.VariableB\x02\x18\x01R\tvariables\x12n\n" +
 	"\x15resolved_parent_place\x18\x06 \x01(\v26.datacommons.v2.SearchIndicatorsResponse.ResolvedPlaceB\x02\x18\x01R\x13resolvedParentPlace\x12@\n" +
 	"\x10topic_candidates\x18\a \x01(\v2\x15.datacommons.v2.TableR\x0ftopicCandidates\x12F\n" +
-	"\x13variable_candidates\x18\b \x01(\v2\x15.datacommons.v2.TableR\x12variableCandidates\x12B\n" +
-	"\x11constraint_values\x18\t \x01(\v2\x15.datacommons.v2.TableR\x10constraintValues\x1a\xee\x01\n" +
+	"\x13variable_candidates\x18\b \x01(\v2\x15.datacommons.v2.TableR\x12variableCandidates\x12J\n" +
+	"\x15constraint_properties\x18\t \x01(\v2\x15.datacommons.v2.TableR\x14constraintProperties\x1a\xee\x01\n" +
 	"\x05Topic\x12\x12\n" +
 	"\x04dcid\x18\x01 \x01(\tR\x04dcid\x12#\n" +
 	"\rmember_topics\x18\x02 \x03(\tR\fmemberTopics\x12)\n" +
@@ -2293,11 +2301,14 @@ const file_v2_agent_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\v2<.datacommons.v2.GetVariableMetadataResponse.VariableMetadataR\x05value:\x028\x01\x1a~\n" +
 	"\x10ProvenancesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12T\n" +
-	"\x05value\x18\x02 \x01(\v2>.datacommons.v2.GetVariableMetadataResponse.ProvenanceMetadataR\x05value:\x028\x01\"U\n" +
+	"\x05value\x18\x02 \x01(\v2>.datacommons.v2.GetVariableMetadataResponse.ProvenanceMetadataR\x05value:\x028\x01\"u\n" +
 	"\x1cInspectIndicatorNodesRequest\x12\x14\n" +
 	"\x05dcids\x18\x01 \x03(\tR\x05dcids\x12\x1f\n" +
 	"\vplace_dcids\x18\x02 \x03(\tR\n" +
-	"placeDcids\"\xbb\x06\n" +
+	"placeDcids\x12\x1e\n" +
+	"\n" +
+	"properties\x18\x03 \x03(\tR\n" +
+	"properties\"\xbb\x06\n" +
 	"\x1dInspectIndicatorNodesResponse\x12U\n" +
 	"\x06topics\x18\x01 \x03(\v2=.datacommons.v2.InspectIndicatorNodesResponse.TopicInspectionR\x06topics\x12\\\n" +
 	"\tstat_vars\x18\x02 \x03(\v2?.datacommons.v2.InspectIndicatorNodesResponse.StatVarInspectionR\bstatVars\x1a\xb0\x01\n" +
@@ -2400,7 +2411,7 @@ var file_v2_agent_proto_depIdxs = []int32{
 	16, // 5: datacommons.v2.SearchIndicatorsResponse.resolved_parent_place:type_name -> datacommons.v2.SearchIndicatorsResponse.ResolvedPlace
 	5,  // 6: datacommons.v2.SearchIndicatorsResponse.topic_candidates:type_name -> datacommons.v2.Table
 	5,  // 7: datacommons.v2.SearchIndicatorsResponse.variable_candidates:type_name -> datacommons.v2.Table
-	5,  // 8: datacommons.v2.SearchIndicatorsResponse.constraint_values:type_name -> datacommons.v2.Table
+	5,  // 8: datacommons.v2.SearchIndicatorsResponse.constraint_properties:type_name -> datacommons.v2.Table
 	37, // 9: datacommons.v2.Table.rows:type_name -> google.protobuf.ListValue
 	19, // 10: datacommons.v2.GetObservationsRequest.entities:type_name -> datacommons.v2.GetObservationsRequest.EntitiesEntry
 	20, // 11: datacommons.v2.GetObservationsResponse.variable:type_name -> datacommons.v2.GetObservationsResponse.Node

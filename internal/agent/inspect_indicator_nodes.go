@@ -65,7 +65,7 @@ func (s *Service) InspectIndicatorNodes(
 	}
 
 	if len(svDcids) > 0 {
-		statVars, err := s.inspectStatVarNodes(ctx, svDcids, req.GetPlaceDcids())
+		statVars, err := s.inspectStatVarNodes(ctx, svDcids, req.GetPlaceDcids(), req.GetProperties())
 		if err != nil {
 			return nil, err
 		}
@@ -134,6 +134,7 @@ func (s *Service) inspectStatVarNodes(
 	ctx context.Context,
 	svDcids []string,
 	placeDcids []string,
+	properties []string,
 ) ([]*pbv2.InspectIndicatorNodesResponse_StatVarInspection, error) {
 	nodeResp, err := s.mixer.V2Node(ctx, &pbv2.NodeRequest{
 		Nodes:    svDcids,
@@ -158,20 +159,38 @@ func (s *Service) inspectStatVarNodes(
 	})
 	summaryBySv := indexVariableSummaries(bulkResp)
 
+	propSet := make(map[string]bool)
+	for _, p := range properties {
+		propSet[strings.TrimSpace(p)] = true
+	}
+
 	var out []*pbv2.InspectIndicatorNodesResponse_StatVarInspection
 	for _, svDcid := range svDcids {
 		var dims []*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary
-		if prefixQuerier, ok := s.mixer.(interface {
-			GetStatVarDimensionsByPrefix(ctx context.Context, seedDcid string) ([]*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary, error)
-		}); ok {
-			dims, _ = prefixQuerier.GetStatVarDimensionsByPrefix(ctx, svDcid)
-		}
-		if len(dims) == 0 {
-			targetSvgIds := extractNonRootSvgIds(nodeResp, svDcid, s.defaultSvgRoot)
-			var err error
-			dims, err = s.fetchDimensionSummariesForSvgs(ctx, targetSvgIds, placeDcids)
-			if err != nil {
-				return nil, err
+		if len(propSet) > 0 {
+			if prefixQuerier, ok := s.mixer.(interface {
+				GetStatVarDimensionsByPrefix(ctx context.Context, seedDcid string, properties []string) ([]*pbv2.InspectIndicatorNodesResponse_DimensionSliceSummary, error)
+			}); ok {
+				allDims, _ := prefixQuerier.GetStatVarDimensionsByPrefix(ctx, svDcid, properties)
+				for _, d := range allDims {
+					if propSet[d.GetDimension()] {
+						d.SampleSlices = nil
+						dims = append(dims, d)
+					}
+				}
+			}
+			if len(dims) == 0 {
+				targetSvgIds := extractNonRootSvgIds(nodeResp, svDcid, s.defaultSvgRoot)
+				allDims, err := s.fetchDimensionSummariesForSvgs(ctx, targetSvgIds, placeDcids)
+				if err != nil {
+					return nil, err
+				}
+				for _, d := range allDims {
+					if propSet[d.GetDimension()] {
+						d.SampleSlices = nil
+						dims = append(dims, d)
+					}
+				}
 			}
 		}
 		inspection := &pbv2.InspectIndicatorNodesResponse_StatVarInspection{
